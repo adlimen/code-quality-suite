@@ -18,99 +18,227 @@ The AdLimen Code Quality Suite provides a unified, multi-language code quality s
 
 ### Method 1: Interactive Installation (Recommended)
 
-The interactive installer detects your project structure and guides you through the configuration process.
+The interactive installer uses a **global + local hybrid approach** for maximum efficiency and flexibility.
 
 ```bash
-# Clone the quality suite
-git clone https://github.com/adlimen/code-quality-suite.git
+# Step 1: Get the installer (one-time setup)
+curl -fsSL https://raw.githubusercontent.com/matteocervelli/code-quality-suite/main/adlimen-installer/install.sh -o install.sh
+chmod +x install.sh
 
-# Navigate to the installer
-cd code-quality-suite/adlimen-installer
-
-# Run interactive installation
+# Step 2: Run from your project directory
+cd /path/to/your/project
 ./install.sh
 
-# Follow the prompts:
-# 1. Project type detection
-# 2. Language selection
-# 3. Directory structure configuration
-# 4. Quality threshold settings
-# 5. CI/CD provider selection
-# 6. Git hooks setup
+# Follow the interactive prompts:
+# 1. Confirm project root directory
+# 2. Choose global installation directory (~/.adlimen)
+# 3. Project structure detection (monorepo/standard)
+# 4. Language selection (JavaScript/TypeScript, Python)
+# 5. Directory structure configuration (frontend/backend)
+# 6. Interface preference (npm/make/both)
+# 7. Quality threshold settings (complexity, maintainability)
+# 8. Git hooks configuration (pre-commit/pre-push)
+# 9. CI/CD provider selection (GitHub/GitLab/CircleCI)
 ```
 
+**🌍 Global System Setup:**
+- **One-time installation** at `~/.adlimen/code-quality-suite/`
+- **Automatic updates** via git pull when requested
+- **Shared cache** and configurations across projects
+- **Centralized maintenance** and upgrades
+
+**🏠 Per-Project Configuration:**
+- **Lightweight setup** in each project
+- **Custom configurations** (.adlimen-config.json)
+- **Project-specific scripts** (wrapper scripts pointing to global system)
+- **Local git hooks** configured for the project
+- **Isolated settings** and thresholds
+
 **What the installer does:**
-- Detects existing project structure and languages
-- Creates `.adlimen-config.json` configuration file
-- Installs appropriate dependencies for selected languages
-- Sets up quality check scripts and configurations
-- Configures git hooks for automated quality checks
-- Creates CI/CD workflows for your provider
-- Generates custom documentation for your setup
+- **Global**: Installs/updates AdLimen system globally
+- **Local**: Creates project-specific configuration and scripts
+- **Integration**: Sets up git hooks, CI/CD workflows, .gitignore entries
+- **Documentation**: Generates ADLIMEN-README.md with usage instructions
 
-### Method 2: Manual Installation by Language
+### Method 2: Global System + Manual Project Setup
 
-#### JavaScript/TypeScript Projects
+For advanced users who want to set up the global system once and then manually configure projects.
+
+#### Step 1: Global System Installation
 
 ```bash
-# 1. Copy the JavaScript edition
-cp -r code-quality-suite/editions/javascript/ ./quality-tools/
+# Install global AdLimen system
+mkdir -p ~/.adlimen
+git clone https://github.com/matteocervelli/code-quality-suite.git ~/.adlimen/code-quality-suite
 
-# 2. Install dependencies
+# Verify installation
+ls ~/.adlimen/code-quality-suite/editions/
+```
+
+#### Step 2: Project-Specific Setup
+
+**JavaScript/TypeScript Projects:**
+
+```bash
+# Navigate to your project
+cd /path/to/your/project
+
+# Create AdLimen configuration
+cat > .adlimen-config.json << 'EOF'
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "languages": ["javascript"],
+    "structure": {
+      "type": "standard",
+      "frontendDir": "src",
+      "isMonorepo": false
+    },
+    "interface": "npm",
+    "thresholds": {
+      "complexity": 10,
+      "maintainability": 70,
+      "duplication": 5
+    },
+    "features": {
+      "security": true,
+      "gitHooks": true
+    },
+    "paths": {
+      "globalSuiteDir": "~/.adlimen/code-quality-suite"
+    }
+  }
+}
+EOF
+
+# Create wrapper scripts
+mkdir -p scripts/adlimen
+cat > scripts/adlimen/quality-check.cjs << 'EOF'
+#!/usr/bin/env node
+const { execSync } = require('child_process');
+const path = require('path');
+const os = require('os');
+
+const globalSuite = path.join(os.homedir(), '.adlimen', 'code-quality-suite');
+const scriptPath = path.join(globalSuite, 'editions', 'javascript', 'quality-check.cjs');
+
+try {
+  execSync(`node "${scriptPath}" ${process.argv.slice(2).join(' ')}`, { stdio: 'inherit' });
+} catch (error) {
+  process.exit(error.status || 1);
+}
+EOF
+
+chmod +x scripts/adlimen/quality-check.cjs
+
+# Add npm scripts to package.json
+npm pkg set scripts.adlimen:quality="node scripts/adlimen/quality-check.cjs all"
+npm pkg set scripts.adlimen:quality:fix="node scripts/adlimen/quality-check.cjs all --fix"
+npm pkg set scripts.adlimen:lint="node scripts/adlimen/quality-check.cjs linting"
+npm pkg set scripts.adlimen:lint:fix="node scripts/adlimen/quality-check.cjs linting --fix"
+
+# Install dependencies
 npm install --save-dev \
   @typescript-eslint/eslint-plugin \
   @typescript-eslint/parser \
-  dependency-cruiser \
   eslint \
-  eslint-plugin-import \
-  eslint-plugin-security \
   eslint-plugin-sonarjs \
-  eslint-plugin-unused-imports \
-  husky \
-  jscpd \
-  lint-staged \
   prettier \
-  ts-prune \
   typescript \
-  typhonjs-escomplex-module
+  husky \
+  lint-staged
 
-# 3. Copy configurations
-cp quality-tools/.eslint-configs/ ./.eslint-configs/
-cp quality-tools/.dependency-cruiser.cjs ./
-cp quality-tools/package-template.json ./package.json.template
-
-# 4. Merge package.json scripts
-node quality-tools/setup.js
-
-# 5. Setup git hooks
-npm run setup-hooks
-
-# 6. Run initial quality check
-npm run quality
+# Setup git hooks (optional)
+npx husky install
+npx husky add .husky/pre-commit "npm run adlimen:quality:fix"
+npx husky add .husky/pre-push "npm run adlimen:quality"
 ```
 
-#### Python Projects
+**Python Projects:**
 
 ```bash
-# 1. Copy the Python edition
-cp -r code-quality-suite/editions/python/ ./quality-tools/
+# Navigate to your project
+cd /path/to/your/project
 
-# 2. Install quality dependencies
-pip install -r quality-tools/requirements.template.txt
+# Create AdLimen configuration
+cat > .adlimen-config.json << 'EOF'
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "languages": ["python"],
+    "structure": {
+      "type": "standard",
+      "backendDir": "src",
+      "isMonorepo": false
+    },
+    "interface": "make",
+    "thresholds": {
+      "complexity": 10,
+      "maintainability": 70,
+      "duplication": 5
+    },
+    "features": {
+      "security": true,
+      "gitHooks": true
+    },
+    "paths": {
+      "globalSuiteDir": "~/.adlimen/code-quality-suite"
+    }
+  }
+}
+EOF
 
-# 3. Copy configuration template
-cp quality-tools/pyproject.toml.template ./pyproject.toml
+# Create wrapper scripts
+mkdir -p scripts/adlimen
+cat > scripts/adlimen/python-quality-check.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+from pathlib import Path
 
-# 4. Make scripts executable
-chmod +x quality-tools/python-quality-check.py
-chmod +x quality-tools/python-duplication-check.py
+global_suite = Path.home() / '.adlimen' / 'code-quality-suite'
+script_path = global_suite / 'editions' / 'python' / 'quality-check.py'
 
-# 5. Setup git hooks (optional)
-cp quality-tools/hooks/* .git/hooks/
-chmod +x .git/hooks/*
+try:
+    result = subprocess.run([sys.executable, str(script_path)] + sys.argv[1:])
+    sys.exit(result.returncode)
+except Exception as e:
+    print(f"Error running quality check: {e}")
+    sys.exit(1)
+EOF
 
-# 6. Run initial quality check
-python quality-tools/python-quality-check.py all
+chmod +x scripts/adlimen/python-quality-check.py
+
+# Create Makefile (optional)
+cat > Makefile << 'EOF'
+.PHONY: adlimen-quality adlimen-quality-fix adlimen-lint adlimen-security
+
+adlimen-quality:
+	python scripts/adlimen/python-quality-check.py all
+
+adlimen-quality-fix:
+	python scripts/adlimen/python-quality-check.py all --fix
+
+adlimen-lint:
+	python scripts/adlimen/python-quality-check.py linting --fix
+
+adlimen-security:
+	python scripts/adlimen/python-quality-check.py security
+EOF
+
+# Install dependencies
+pip install -r ~/.adlimen/code-quality-suite/editions/python/requirements.template.txt
+
+# Setup git hooks (optional)
+mkdir -p .git/hooks
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+echo "🔍 Running AdLimen Python quality checks..."
+python scripts/adlimen/python-quality-check.py required --fix
+EOF
+
+chmod +x .git/hooks/pre-commit
 ```
 
 ### Method 3: Configuration-Driven Setup

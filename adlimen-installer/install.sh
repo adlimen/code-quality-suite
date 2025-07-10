@@ -35,6 +35,8 @@ DEFAULT_CONFIG_FILE=".adlimen-config.json"
 INSTALLER_VERSION="1.0.0"
 INSTALLER_DATE="2025-07-10"
 QUALITY_SUITE_DIR=".adlimen-code-quality-suite"
+GLOBAL_ADLIMEN_DIR="$HOME/.adlimen"
+GLOBAL_SUITE_DIR="$GLOBAL_ADLIMEN_DIR/code-quality-suite"
 
 # Global variables
 PROJECT_ROOT=""
@@ -108,7 +110,7 @@ detect_project_structure() {
     print_step "1" "Detecting project structure..."
     
     PROJECT_ROOT=$(pwd)
-    print_message "info" "Analyzing project at: ${PROJECT_ROOT}"
+    print_message "info" "Auto-detected project at: ${PROJECT_ROOT}"
     
     # Detect languages
     if [ -f "package.json" ] || [ -f "tsconfig.json" ] || find . -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" | head -1 | grep -q .; then
@@ -244,6 +246,31 @@ interactive_configuration() {
     print_step "2" "Interactive configuration..."
     
     echo -e "${YELLOW}Please provide the following information:${NC}"
+    echo ""
+    
+    # Confirm project root directory
+    echo -e "${BLUE}Project Configuration:${NC}"
+    read -p "Project root directory [$PROJECT_ROOT]: " input
+    if [ -n "$input" ]; then
+        if [ -d "$input" ]; then
+            PROJECT_ROOT="$input"
+            cd "$PROJECT_ROOT"
+            print_message "success" "Project root set to: $PROJECT_ROOT"
+        else
+            print_message "error" "Directory does not exist: $input"
+            exit 1
+        fi
+    fi
+    
+    # Global installation directory
+    echo ""
+    echo -e "${BLUE}Global Installation:${NC}"
+    local default_global="$HOME/.adlimen"
+    read -p "Global AdLimen directory [$default_global]: " input
+    GLOBAL_ADLIMEN_DIR=${input:-$default_global}
+    GLOBAL_SUITE_DIR="$GLOBAL_ADLIMEN_DIR/code-quality-suite"
+    print_message "info" "Global system will be installed at: $GLOBAL_SUITE_DIR"
+    
     echo ""
     
     # Confirm detected structure
@@ -385,7 +412,8 @@ save_configuration() {
       "configFile": "$CONFIG_FILE",
       "scriptsDir": "scripts/adlimen",
       "reportsDir": "reports",
-      "eslintConfigsDir": ".eslint-configs"
+      "eslintConfigsDir": ".eslint-configs",
+      "globalSuiteDir": "$GLOBAL_SUITE_DIR"
     }
   }
 }
@@ -448,6 +476,50 @@ check_prerequisites() {
     fi
     
     print_message "success" "All prerequisites satisfied"
+}
+
+# Setup global AdLimen system
+setup_global_system() {
+    print_step "4.5" "Setting up global AdLimen system..."
+    
+    # Check if global system exists
+    if [ -d "$GLOBAL_SUITE_DIR" ]; then
+        print_message "info" "Global AdLimen system found at $GLOBAL_SUITE_DIR"
+        
+        # Offer to update
+        read -p "Update global AdLimen system to latest version? (Y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            cd "$GLOBAL_SUITE_DIR"
+            git pull origin main
+            print_message "success" "Global system updated"
+        fi
+    else
+        print_message "info" "Installing global AdLimen system..."
+        
+        # Create global directory
+        mkdir -p "$GLOBAL_ADLIMEN_DIR"
+        
+        # Clone the repository
+        if git clone https://github.com/matteocervelli/code-quality-suite.git "$GLOBAL_SUITE_DIR"; then
+            print_message "success" "Global AdLimen system installed at $GLOBAL_SUITE_DIR"
+        else
+            print_message "error" "Failed to clone AdLimen repository"
+            
+            # Fallback: copy from current directory if we're running from the repo
+            if [ -f "../README.md" ] && [ -d "../editions" ]; then
+                print_message "info" "Using local copy as fallback..."
+                cp -r .. "$GLOBAL_SUITE_DIR"
+                print_message "success" "Global system installed from local copy"
+            else
+                print_message "error" "Cannot install global system"
+                exit 1
+            fi
+        fi
+    fi
+    
+    # Update project configuration with global path
+    GLOBAL_SUITE_PATH="$GLOBAL_SUITE_DIR"
 }
 
 # Install JavaScript/TypeScript quality system
@@ -1195,6 +1267,7 @@ main() {
     interactive_configuration
     save_configuration
     check_prerequisites
+    setup_global_system
     
     install_javascript_system
     install_python_system
