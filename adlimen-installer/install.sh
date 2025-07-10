@@ -49,6 +49,8 @@ MAINTAINABILITY_THRESHOLD=70
 DUPLICATION_THRESHOLD=5
 ENABLE_SECURITY=true
 ENABLE_GIT_HOOKS=true
+ENABLE_PRECOMMIT_HOOKS=true
+ENABLE_PREPUSH_HOOKS=true
 CI_PROVIDER=""
 CONFIG_FILE=""
 
@@ -294,11 +296,38 @@ interactive_configuration() {
         ENABLE_SECURITY=false
     fi
     
-    read -p "Setup git hooks? (Y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
-        ENABLE_GIT_HOOKS=false
-    fi
+    echo ""
+    echo "Git hooks setup options:"
+    echo "1) Yes, install git hooks (recommended)"
+    echo "2) No, skip git hooks"
+    echo "3) Install git hooks with custom configuration"
+    read -p "Choice [1-3]: " hooks_choice
+    
+    case $hooks_choice in
+        1) ENABLE_GIT_HOOKS=true ;;
+        2) ENABLE_GIT_HOOKS=false ;;
+        3) 
+            ENABLE_GIT_HOOKS=true
+            echo ""
+            echo "Git hooks configuration:"
+            read -p "Run quality checks on pre-commit? (Y/n): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Nn]$ ]]; then
+                ENABLE_PRECOMMIT_HOOKS=false
+            else
+                ENABLE_PRECOMMIT_HOOKS=true
+            fi
+            
+            read -p "Run full quality suite on pre-push? (Y/n): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Nn]$ ]]; then
+                ENABLE_PREPUSH_HOOKS=false
+            else
+                ENABLE_PREPUSH_HOOKS=true
+            fi
+            ;;
+        *) ENABLE_GIT_HOOKS=true ;;
+    esac
     
     # CI/CD integration
     echo ""
@@ -348,6 +377,8 @@ save_configuration() {
     "features": {
       "security": $ENABLE_SECURITY,
       "gitHooks": $ENABLE_GIT_HOOKS,
+      "preCommitHooks": $ENABLE_PRECOMMIT_HOOKS,
+      "prePushHooks": $ENABLE_PREPUSH_HOOKS,
       "ciProvider": "$CI_PROVIDER"
     },
     "paths": {
@@ -950,25 +981,44 @@ setup_git_hooks() {
         npm install --save-dev husky lint-staged
         npx husky install
         
-        # Pre-commit hook
-        npx husky add .husky/pre-commit "node scripts/adlimen/quality-check.cjs required --fix"
+        # Pre-commit hook (if enabled)
+        if [ "$ENABLE_PRECOMMIT_HOOKS" = "true" ]; then
+            npx husky add .husky/pre-commit "node scripts/adlimen/quality-check.cjs required --fix"
+            print_message "success" "Pre-commit hook configured"
+        fi
         
-        # Pre-push hook
-        npx husky add .husky/pre-push "node scripts/adlimen/quality-check.cjs all"
+        # Pre-push hook (if enabled)
+        if [ "$ENABLE_PREPUSH_HOOKS" = "true" ]; then
+            npx husky add .husky/pre-push "node scripts/adlimen/quality-check.cjs all"
+            print_message "success" "Pre-push hook configured"
+        fi
         
         print_message "success" "Git hooks configured with Husky"
     else
         # Manual git hooks
         mkdir -p .git/hooks
         
-        cat > .git/hooks/pre-commit << 'EOF'
+        # Pre-commit hook (if enabled)
+        if [ "$ENABLE_PRECOMMIT_HOOKS" = "true" ]; then
+            cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
 echo "🔍 Running AdLimen pre-commit checks..."
 node scripts/adlimen/quality-check.cjs required --fix
 EOF
+            chmod +x .git/hooks/pre-commit
+            print_message "success" "Manual pre-commit hook configured"
+        fi
         
-        chmod +x .git/hooks/pre-commit
-        print_message "success" "Manual git hooks configured"
+        # Pre-push hook (if enabled)
+        if [ "$ENABLE_PREPUSH_HOOKS" = "true" ]; then
+            cat > .git/hooks/pre-push << 'EOF'
+#!/bin/bash
+echo "🚀 Running AdLimen pre-push checks..."
+node scripts/adlimen/quality-check.cjs all
+EOF
+            chmod +x .git/hooks/pre-push
+            print_message "success" "Manual pre-push hook configured"
+        fi
     fi
 }
 
