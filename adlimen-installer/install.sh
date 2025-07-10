@@ -590,6 +590,181 @@ setup_global_system() {
     GLOBAL_SUITE_PATH="$GLOBAL_SUITE_DIR"
 }
 
+# Create ESLint 9.x flat configuration files
+create_eslint_configs() {
+    print_message "info" "Generating ESLint 9.x flat config files..."
+    
+    # Main eslint.config.js (default configuration)
+    cat > eslint.config.js << 'EOF'
+import js from '@eslint/js';
+import typescript from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import sonarjs from 'eslint-plugin-sonarjs';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescript,
+      sonarjs
+    },
+    rules: {
+      ...typescript.configs.recommended.rules,
+      ...sonarjs.configs.recommended.rules,
+      'no-console': 'warn',
+      'no-debugger': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'complexity': ['error', 10],
+      'max-depth': ['error', 4],
+      'max-lines-per-function': ['error', 50]
+    }
+  },
+  {
+    files: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}', 'test/**/*'],
+    rules: {
+      'no-console': 'off'
+    }
+  }
+];
+EOF
+
+    # Import sorting configuration
+    cat > eslint.import.config.js << 'EOF'
+import js from '@eslint/js';
+import importPlugin from 'eslint-plugin-import';
+import tsParser from '@typescript-eslint/parser';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      import: importPlugin
+    },
+    rules: {
+      'import/order': ['error', {
+        'groups': [
+          'builtin',
+          'external',
+          'internal',
+          'parent',
+          'sibling',
+          'index'
+        ],
+        'newlines-between': 'always',
+        'alphabetize': {
+          'order': 'asc',
+          'caseInsensitive': true
+        }
+      }],
+      'import/newline-after-import': 'error',
+      'import/no-duplicates': 'error'
+    }
+  }
+];
+EOF
+
+    # Security configuration
+    cat > eslint.security.config.js << 'EOF'
+import js from '@eslint/js';
+import security from 'eslint-plugin-security';
+import tsParser from '@typescript-eslint/parser';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      security
+    },
+    rules: {
+      ...security.configs.recommended.rules,
+      'security/detect-object-injection': 'error',
+      'security/detect-non-literal-fs-filename': 'warn',
+      'security/detect-unsafe-regex': 'error',
+      'security/detect-buffer-noassert': 'error',
+      'security/detect-child-process': 'warn',
+      'security/detect-disable-mustache-escape': 'error',
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-no-csrf-before-method-override': 'error',
+      'security/detect-non-literal-regexp': 'error',
+      'security/detect-non-literal-require': 'warn',
+      'security/detect-possible-timing-attacks': 'warn',
+      'security/detect-pseudoRandomBytes': 'error'
+    }
+  }
+];
+EOF
+
+    # Complexity configuration
+    cat > eslint.complexity.config.js << 'EOF'
+import js from '@eslint/js';
+import typescript from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import sonarjs from 'eslint-plugin-sonarjs';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescript,
+      sonarjs
+    },
+    rules: {
+      'complexity': ['error', 10],
+      'max-depth': ['error', 4],
+      'max-lines-per-function': ['error', 50],
+      'max-params': ['error', 4],
+      'max-statements': ['error', 20],
+      'max-statements-per-line': ['error', { max: 1 }],
+      'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/max-switch-cases': ['error', 30],
+      'sonarjs/no-duplicate-string': ['error', 3],
+      'sonarjs/no-duplicated-branches': 'error',
+      'sonarjs/no-identical-functions': 'error',
+      'sonarjs/prefer-immediate-return': 'error'
+    }
+  }
+];
+EOF
+
+    print_message "success" "ESLint 9.x configuration files created"
+}
+
 # Install JavaScript/TypeScript quality system
 install_javascript_system() {
     if [[ ! " ${LANGUAGES[@]} " =~ " javascript " ]]; then
@@ -675,16 +850,16 @@ const tools = {
     name: 'Import Sorting',
     description: 'Import organization',
     commands: {
-      check: ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.', '--config', '.eslint-configs/import-sorting.js'],
-      fix: ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.', '--config', '.eslint-configs/import-sorting.js', '--fix']
+      check: ['npx', 'eslint', '.', '--config', 'eslint.import.config.js'],
+      fix: ['npx', 'eslint', '.', '--config', 'eslint.import.config.js', '--fix']
     }
   },
   linting: {
     name: 'ESLint',
     description: 'Code quality linting',
     commands: {
-      check: ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.'],
-      fix: ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.', '--fix']
+      check: ['npx', 'eslint', '.'],
+      fix: ['npx', 'eslint', '.', '--fix']
     }
   },
   'type-checking': {
@@ -698,7 +873,7 @@ const tools = {
     name: 'Security Analysis',
     description: 'Security vulnerability scanning',
     commands: {
-      check: config.features.security ? ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.', '--config', '.eslint-configs/security.js'] : null
+      check: config.features.security ? ['npx', 'eslint', '.', '--config', 'eslint.security.config.js'] : null
     }
   },
   'dead-code': {
@@ -719,7 +894,7 @@ const tools = {
     name: 'Complexity Analysis',
     description: 'Cyclomatic complexity',
     commands: {
-      check: ['npx', 'eslint', '--ext', '.ts,.tsx,.js,.jsx', '.', '--config', '.eslint-configs/complexity.js']
+      check: ['npx', 'eslint', '.', '--config', 'eslint.complexity.config.js']
     }
   },
   maintainability: {
@@ -810,6 +985,10 @@ EOF
 
     chmod +x scripts/adlimen/quality-check.cjs
     
+    # Create ESLint 9.x configuration files
+    print_message "info" "Creating ESLint 9.x configuration files..."
+    create_eslint_configs
+    
     # Install npm scripts if requested
     if [ "$PREFERRED_INTERFACE" = "npm" ] || [ "$PREFERRED_INTERFACE" = "both" ]; then
         print_message "info" "Installing npm scripts..."
@@ -826,6 +1005,7 @@ EOF
     print_message "info" "Installing JavaScript dependencies..."
     npm install --save-dev \
         eslint@^9.0.0 \
+        @eslint/js@^9.0.0 \
         prettier@^3.1.0 \
         typescript@^5.4.0 \
         jscpd@^4.0.5 \
@@ -835,6 +1015,7 @@ EOF
         @typescript-eslint/parser@^8.15.0 \
         eslint-plugin-import@^2.31.0 \
         eslint-plugin-security@^3.0.1 \
+        eslint-plugin-sonarjs@^2.0.0 \
         husky@^9.0.0 \
         lint-staged@^15.0.0 \
         typhonjs-escomplex-module@^0.1.0 || {
@@ -1257,7 +1438,7 @@ $CONFIG_FILE
 scripts/adlimen/
 reports/
 ADLIMEN-README.md
-.eslint-configs/
+eslint.*.config.js
 .adlimen-code-quality-suite/
 
 # Quality reports and temporary files (various locations)
