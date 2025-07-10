@@ -21,26 +21,26 @@ The AdLimen Code Quality Suite provides a unified, multi-language code quality s
 The interactive installer uses a **global + local hybrid approach** for maximum efficiency and flexibility.
 
 ```bash
-# Option A: Download installer only (auto-downloads repository)
+# Option A: Download installer only (recommended for most users)
 curl -fsSL https://raw.githubusercontent.com/matteocervelli/code-quality-suite/main/adlimen-installer/install.sh -o install.sh
 chmod +x install.sh
-cd /path/to/your/project
 ./install.sh
-# The installer will automatically download the full repository to ~/.adlimen/
 
-# Option B: Clone repository first (recommended for development)
+# Option B: Clone repository first (for development/offline use)
 git clone https://github.com/matteocervelli/code-quality-suite.git ~/tools/code-quality-suite
-cd /path/to/your/project
 ~/tools/code-quality-suite/adlimen-installer/install.sh
 
 # Option C: Global installation for convenience
 git clone https://github.com/matteocervelli/code-quality-suite.git ~/tools/code-quality-suite
 sudo ln -s ~/tools/code-quality-suite/adlimen-installer/install.sh /usr/local/bin/adlimen-install
-# Then from any project: adlimen-install
+# Then from anywhere: adlimen-install
 
-# Follow the interactive prompts:
-# 1. Confirm project root directory
-# 2. Choose global installation directory (~/.adlimen)
+# The installer will interactively ask:
+# 1. Global installation directory (default: ~/.adlimen)
+# 2. "Do you want to configure a project now?" 
+# 3. If yes: "Which project directory to configure?"
+# 4. Project-specific configuration (languages, structure, etc.)
+# 5. Quality thresholds, git hooks, CI/CD setup
 # 3. Project structure detection (monorepo/standard)
 # 4. Language selection (JavaScript/TypeScript, Python)
 # 5. Directory structure configuration (frontend/backend)

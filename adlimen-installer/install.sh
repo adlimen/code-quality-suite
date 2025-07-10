@@ -241,36 +241,55 @@ detect_project_structure() {
     fi
 }
 
-# Interactive configuration
-interactive_configuration() {
-    print_step "2" "Interactive configuration..."
+# Global system configuration
+configure_global_system() {
+    print_step "2" "Global system configuration..."
     
-    echo -e "${YELLOW}Please provide the following information:${NC}"
+    echo -e "${YELLOW}AdLimen Global System Setup:${NC}"
     echo ""
-    
-    # Confirm project root directory
-    echo -e "${BLUE}Project Configuration:${NC}"
-    read -p "Project root directory [$PROJECT_ROOT]: " input
-    if [ -n "$input" ]; then
-        if [ -d "$input" ]; then
-            PROJECT_ROOT="$input"
-            cd "$PROJECT_ROOT"
-            print_message "success" "Project root set to: $PROJECT_ROOT"
-        else
-            print_message "error" "Directory does not exist: $input"
-            exit 1
-        fi
-    fi
     
     # Global installation directory
-    echo ""
-    echo -e "${BLUE}Global Installation:${NC}"
+    echo -e "${BLUE}Global Installation Directory:${NC}"
     local default_global="$HOME/.adlimen"
     read -p "Global AdLimen directory [$default_global]: " input
     GLOBAL_ADLIMEN_DIR=${input:-$default_global}
     GLOBAL_SUITE_DIR="$GLOBAL_ADLIMEN_DIR/code-quality-suite"
     print_message "info" "Global system will be installed at: $GLOBAL_SUITE_DIR"
+}
+
+# Ask about project configuration
+ask_project_configuration() {
+    echo ""
+    echo -e "${YELLOW}Project Configuration:${NC}"
+    read -p "Do you want to configure a project now? (Y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        print_message "info" "Global system installed. You can configure projects later by running this installer again."
+        return 1
+    fi
     
+    # Ask for project directory
+    echo ""
+    echo -e "${BLUE}Project Directory:${NC}"
+    local current_dir=$(pwd)
+    read -p "Project directory to configure [$current_dir]: " input
+    PROJECT_ROOT=${input:-$current_dir}
+    
+    if [ ! -d "$PROJECT_ROOT" ]; then
+        print_message "error" "Directory does not exist: $PROJECT_ROOT"
+        exit 1
+    fi
+    
+    print_message "success" "Configuring project at: $PROJECT_ROOT"
+    cd "$PROJECT_ROOT"
+    return 0
+}
+
+# Interactive configuration
+interactive_configuration() {
+    print_step "3" "Project configuration..."
+    
+    echo -e "${YELLOW}Project-specific configuration:${NC}"
     echo ""
     
     # Confirm detected structure
@@ -1269,20 +1288,36 @@ print_summary() {
 main() {
     print_header
     
-    detect_project_structure
-    interactive_configuration
-    save_configuration
-    check_prerequisites
+    # Step 1: Configure global system
+    configure_global_system
+    
+    # Step 2: Setup global system
     setup_global_system
     
-    install_javascript_system
-    install_python_system
-    setup_cicd_integration
-    setup_git_hooks
-    update_gitignore
-    generate_documentation
-    
-    print_summary
+    # Step 3: Ask if user wants to configure a project
+    if ask_project_configuration; then
+        # Step 4: Detect and configure project
+        detect_project_structure
+        interactive_configuration
+        save_configuration
+        check_prerequisites
+        
+        install_javascript_system
+        install_python_system
+        setup_cicd_integration
+        setup_git_hooks
+        update_gitignore
+        generate_documentation
+        
+        print_summary
+    else
+        # Only global system installed
+        echo ""
+        echo -e "${GREEN}${SUCCESS}${NC} ${WHITE}AdLimen Global System installed successfully!${NC}"
+        echo ""
+        echo -e "${YELLOW}To configure a project later, run this installer again from any directory.${NC}"
+        echo -e "${CYAN}Global system location: $GLOBAL_SUITE_DIR${NC}"
+    fi
 }
 
 # Error handling
