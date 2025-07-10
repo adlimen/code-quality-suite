@@ -1,0 +1,307 @@
+# Complete Quality Suite - Python Edition Makefile Template
+# Comprehensive quality and development commands for Python projects
+# Copy this to your project root as 'Makefile'
+
+.PHONY: help install dev test lint format type-check security dead-code duplication complexity maintainability quality quality-fix clean venv
+
+# Default target
+help:
+	@echo "Complete Quality Suite - Python Edition"
+	@echo "========================================"
+	@echo ""
+	@echo "Environment:"
+	@echo "  install          Install dependencies"
+	@echo "  venv             Create virtual environment"
+	@echo "  dev              Setup development environment"
+	@echo "  clean            Clean build artifacts and cache"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test             Run unit tests"
+	@echo "  test-watch       Run tests in watch mode"
+	@echo "  test-coverage    Run tests with coverage report"
+	@echo ""
+	@echo "Code Quality (11-Step Modular Workflow):"
+	@echo "  format           Check code formatting (Black)"
+	@echo "  format-fix       Format code with auto-fix"
+	@echo "  import-sorting   Check import sorting (isort)"
+	@echo "  import-sorting-fix Fix import sorting"
+	@echo "  lint             Run linting (Ruff + Pylint)"
+	@echo "  lint-fix         Run linting with auto-fix"
+	@echo "  type-check       Run type checking (MyPy)"
+	@echo "  security         Run security analysis (Bandit + Safety)"
+	@echo "  vulnerability-check Run vulnerability scanning"
+	@echo "  dead-code        Find dead code (Vulture + Unimport)"
+	@echo "  duplication      Code duplication detection"
+	@echo "  complexity       Code complexity analysis (Radon)"
+	@echo "  maintainability  Code maintainability analysis"
+	@echo "  dependencies     Dependency analysis"
+	@echo ""
+	@echo "Quality Suites:"
+	@echo "  quality          Run all quality checks (11-step workflow)"
+	@echo "  quality-fix      Run quality checks with auto-fix"
+	@echo "  quality-required Run essential quality checks only"
+	@echo "  quality-security Run security analysis only"
+	@echo "  quality-analysis Run code analysis tools only"
+	@echo ""
+	@echo "Development:"
+	@echo "  run              Run the application"
+	@echo "  debug            Run in debug mode"
+	@echo "  shell            Open Python shell with app context"
+
+# Environment setup
+venv:
+	@echo "Creating virtual environment..."
+	python3 -m venv venv
+	@echo "Activate with: source venv/bin/activate"
+
+install:
+	@echo "Installing dependencies..."
+	pip install -r requirements.txt
+	@echo "Installing development dependencies..."
+	pip install -r requirements-dev.txt || pip install -r requirements.dev.txt || echo "No dev requirements found"
+
+dev: venv install
+	@echo "Setting up development environment..."
+	@$(MAKE) install-quality-tools
+	@echo "✅ Development environment ready"
+
+install-quality-tools:
+	@echo "Installing quality tools..."
+	pip install black isort ruff mypy pylint bandit safety vulture unimport radon pipdeptree pip-check semgrep wily
+
+# Development server
+run:
+	@echo "Starting application..."
+	python -m src.main
+
+debug:
+	@echo "Starting application in debug mode..."
+	PYTHONPATH=. python -m pdb -m src.main
+
+shell:
+	@echo "Opening Python shell..."
+	python -c "import sys; sys.path.insert(0, '.'); exec(open('shell.py').read())" || python
+
+# Testing
+test:
+	@echo "Running unit tests..."
+	python -m pytest tests/ -v
+
+test-watch:
+	@echo "Running tests in watch mode..."
+	python -m pytest tests/ -f
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	python -m pytest tests/ --cov=src --cov-report=html --cov-report=term
+
+# Code quality - 11-Step Modular Workflow
+
+# Step 1: Code Formatting
+format:
+	@echo "Checking code formatting..."
+	@python scripts/quality-check.py formatting
+
+format-fix:
+	@echo "Formatting code with auto-fix..."
+	@python scripts/quality-check.py formatting --fix
+
+# Step 2: Import Sorting
+import-sorting:
+	@echo "Checking import sorting..."
+	@python scripts/quality-check.py import-sorting
+
+import-sorting-fix:
+	@echo "Fixing import sorting..."
+	@python scripts/quality-check.py import-sorting --fix
+
+# Step 3: Code Linting
+lint:
+	@echo "Running code linting..."
+	@python scripts/quality-check.py linting
+
+lint-fix:
+	@echo "Running linting with auto-fix..."
+	@python scripts/quality-check.py linting --fix
+
+# Step 4: Type Checking
+type-check:
+	@echo "Running type checking..."
+	@python scripts/quality-check.py type-checking
+
+# Step 5: Security Scanning
+security-scanning:
+	@echo "Running security scanning..."
+	@python scripts/quality-check.py security-scanning
+
+# Step 6: Vulnerability Checking
+vulnerability-checking:
+	@echo "Running vulnerability checking..."
+	@python scripts/quality-check.py vulnerability-checking
+
+security: security-scanning vulnerability-checking
+
+# Step 7: Dead Code Detection
+dead-code:
+	@echo "Finding dead code..."
+	@python scripts/quality-check.py dead-code
+
+# Step 8: Code Duplication
+duplication:
+	@echo "Analyzing code duplication..."
+	@python scripts/quality-check.py duplication
+
+# Step 9: Complexity Analysis
+complexity:
+	@echo "Analyzing code complexity..."
+	@python scripts/quality-check.py complexity
+
+# Step 10: Maintainability Analysis
+maintainability:
+	@echo "Analyzing code maintainability..."
+	@python scripts/quality-check.py maintainability
+
+# Step 11: Dependency Analysis
+dependencies:
+	@echo "Analyzing dependencies..."
+	@python scripts/quality-check.py dependency-analysis
+
+# Quality Suites
+quality:
+	@echo "Running comprehensive quality analysis (11-step workflow)..."
+	@python scripts/quality-check.py all
+
+quality-fix:
+	@echo "Running quality analysis with auto-fix..."
+	@python scripts/quality-check.py all --fix
+
+quality-required:
+	@echo "Running essential quality checks..."
+	@python scripts/quality-check.py required
+
+quality-security:
+	@echo "Running security analysis..."
+	@python scripts/quality-check.py security
+
+quality-analysis:
+	@echo "Running code analysis..."
+	@python scripts/quality-check.py analysis
+
+# Grouped Quality Checks
+quality-formatting:
+	@echo "Running formatting checks..."
+	@python scripts/quality-check.py formatting-suite
+
+quality-linting:
+	@echo "Running linting checks..."
+	@python scripts/quality-check.py linting-suite
+
+# Clean up
+clean:
+	@echo "Cleaning build artifacts..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyd" -delete 2>/dev/null || true
+	@find . -type f -name ".coverage" -delete 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf build/ dist/ .pytest_cache/ .mypy_cache/ .ruff_cache/ 2>/dev/null || true
+	@rm -rf htmlcov/ .coverage reports/ 2>/dev/null || true
+	@echo "✅ Clean completed"
+
+clean-venv: clean
+	@echo "Removing virtual environment..."
+	@rm -rf venv/
+	@echo "Run 'make venv' to recreate"
+
+# Development workflows
+quick-check:
+	@echo "Running quick quality check..."
+	@$(MAKE) format
+	@$(MAKE) lint
+	@$(MAKE) type-check
+
+pre-commit:
+	@echo "Running pre-commit checks..."
+	@$(MAKE) quality-fix
+	@$(MAKE) test
+
+pre-push:
+	@echo "Running pre-push checks..."
+	@$(MAKE) quality
+	@$(MAKE) test-coverage
+
+# CI/CD helpers
+ci-install:
+	@echo "Installing dependencies for CI..."
+	@pip install -r requirements.txt
+	@$(MAKE) install-quality-tools
+
+ci-quality:
+	@echo "Running CI quality checks..."
+	@python scripts/quality-check.py all --quiet
+
+ci-test:
+	@echo "Running CI tests..."
+	@python -m pytest tests/ --cov=src --cov-report=xml
+
+ci-security:
+	@echo "Running CI security checks..."
+	@python scripts/quality-check.py security --quiet
+
+# Documentation
+docs:
+	@echo "Building documentation..."
+	@sphinx-build -b html docs/ docs/_build/html/ || echo "Sphinx not configured"
+
+docs-serve:
+	@echo "Serving documentation..."
+	@python -m http.server 8000 -d docs/_build/html/ || echo "Build docs first with 'make docs'"
+
+# Setup git hooks
+setup-hooks:
+	@echo "Setting up git hooks..."
+	@echo '#!/bin/bash\nmake pre-commit' > .git/hooks/pre-commit
+	@echo '#!/bin/bash\nmake pre-push' > .git/hooks/pre-push
+	@chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+	@echo "✅ Git hooks configured"
+
+# Database operations (if applicable)
+db-migrate:
+	@echo "Running database migrations..."
+	@python -m alembic upgrade head || echo "Alembic not configured"
+
+db-reset:
+	@echo "Resetting database..."
+	@python -m alembic downgrade base || echo "Alembic not configured"
+	@$(MAKE) db-migrate
+
+# Package management
+requirements:
+	@echo "Generating requirements.txt..."
+	@pip freeze > requirements.txt
+	@echo "✅ Requirements updated"
+
+check-deps:
+	@echo "Checking dependency security..."
+	@pip-audit || echo "pip-audit not available"
+	@safety check || echo "safety not available"
+
+# Development server variations
+run-dev:
+	@echo "Starting development server..."
+	@FLASK_ENV=development python -m src.main || DJANGO_DEBUG=True python manage.py runserver || python -m src.main
+
+run-prod:
+	@echo "Starting production server..."
+	@gunicorn src.main:app || python -m src.main
+
+# Monitoring and profiling
+profile:
+	@echo "Running performance profiling..."
+	@python -m cProfile -o profile.stats -m src.main
+	@python -c "import pstats; pstats.Stats('profile.stats').sort_stats('cumulative').print_stats(20)"
+
+memory-profile:
+	@echo "Running memory profiling..."
+	@python -m memory_profiler src/main.py || echo "memory_profiler not available - install with: pip install memory_profiler"

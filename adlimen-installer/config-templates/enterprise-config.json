@@ -1,0 +1,123 @@
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "installedDate": "2025-07-10T12:00:00Z",
+    "projectRoot": "/path/to/enterprise-project",
+    "languages": ["javascript", "python"],
+    "structure": {
+      "frontendDir": "apps/web",
+      "backendDir": "services/api",
+      "docsDir": "docs",
+      "testsDir": "tests"
+    },
+    "interface": "both",
+    "thresholds": {
+      "complexity": 6,
+      "maintainability": 85,
+      "duplication": 2,
+      "coverage": 90,
+      "techDebt": 5
+    },
+    "features": {
+      "security": true,
+      "gitHooks": true,
+      "ciProvider": "github",
+      "sonarQube": true,
+      "performanceAnalysis": true,
+      "accessibilityCheck": true
+    },
+    "paths": {
+      "configFile": ".adlimen.config.json",
+      "scriptsDir": "tools/quality",
+      "reportsDir": "reports/quality",
+      "eslintConfigsDir": "config/eslint",
+      "sonarConfigDir": "config/sonar"
+    },
+    "environments": {
+      "development": {
+        "thresholds": {
+          "complexity": 10,
+          "maintainability": 70,
+          "coverage": 70
+        },
+        "features": {
+          "performanceAnalysis": false
+        }
+      },
+      "staging": {
+        "thresholds": {
+          "complexity": 8,
+          "maintainability": 80,
+          "coverage": 85
+        },
+        "features": {
+          "performanceAnalysis": true,
+          "accessibilityCheck": true
+        }
+      },
+      "production": {
+        "thresholds": {
+          "complexity": 6,
+          "maintainability": 85,
+          "coverage": 90,
+          "techDebt": 3
+        },
+        "features": {
+          "security": true,
+          "performanceAnalysis": true,
+          "accessibilityCheck": true,
+          "sonarQube": true
+        }
+      }
+    },
+    "teams": {
+      "frontend": {
+        "paths": ["apps/web", "packages/ui"],
+        "thresholds": {
+          "complexity": 8,
+          "maintainability": 80
+        },
+        "tools": ["prettier", "eslint", "lighthouse"]
+      },
+      "backend": {
+        "paths": ["services/api", "packages/core"],
+        "thresholds": {
+          "complexity": 6,
+          "maintainability": 85
+        },
+        "tools": ["black", "mypy", "bandit"]
+      },
+      "devops": {
+        "paths": ["infrastructure", "tools"],
+        "thresholds": {
+          "complexity": 4,
+          "maintainability": 90
+        },
+        "tools": ["shellcheck", "terraform-lint"]
+      }
+    },
+    "notifications": {
+      "slack": {
+        "enabled": true,
+        "webhook": "${SLACK_WEBHOOK}",
+        "channels": ["#quality", "#devops"]
+      },
+      "email": {
+        "enabled": true,
+        "recipients": ["team-leads@company.com"]
+      }
+    },
+    "integrations": {
+      "jira": {
+        "enabled": true,
+        "createTickets": true,
+        "labels": ["quality", "tech-debt"]
+      },
+      "github": {
+        "enabled": true,
+        "createIssues": true,
+        "labels": ["quality-gate", "needs-review"]
+      }
+    }
+  }
+}

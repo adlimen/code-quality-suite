@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+
+# Complete Quality Suite - Python Edition Commit Message Hook
+# Validates commit message format and content
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Emojis
+CHECK="✅"
+ERROR="❌"
+WARNING="⚠️"
+INFO="ℹ️"
+
+# Get the commit message
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Skip validation for merge commits, revert commits, etc.
+if [[ "$COMMIT_MSG" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
+    echo -e "${INFO} Skipping commit message validation for special commit type"
+    exit 0
+fi
+
+# Skip validation for empty commits or comments
+if [[ -z "$(echo "$COMMIT_MSG" | grep -v '^#')" ]]; then
+    exit 0
+fi
+
+echo -e "${CYAN}${INFO} Validating commit message format...${NC}"
+
+# Configuration
+MIN_LENGTH=10
+MAX_LENGTH=72
+MAX_BODY_LINE_LENGTH=100
+
+# Valid commit types (conventional commits)
+VALID_TYPES=(
+    "feat"      # A new feature
+    "fix"       # A bug fix
+    "docs"      # Documentation only changes
+    "style"     # Changes that do not affect the meaning of the code
+    "refactor"  # A code change that neither fixes a bug nor adds a feature
+    "perf"      # A code change that improves performance
+    "test"      # Adding missing tests or correcting existing tests
+    "build"     # Changes that affect the build system or external dependencies
+    "ci"        # Changes to CI configuration files and scripts
+    "chore"     # Other changes that don't modify src or test files
+    "revert"    # Reverts a previous commit
+)
+
+# Extract the first line (subject)
+SUBJECT=$(echo "$COMMIT_MSG" | head -n 1)
+SUBJECT_LENGTH=${#SUBJECT}
+
+# Validation flags
+VALID=true
+ERRORS=()
+WARNINGS=()
+
+# Check subject line length
+if [ $SUBJECT_LENGTH -lt $MIN_LENGTH ]; then
+    VALID=false
+    ERRORS+=("Subject line is too short (${SUBJECT_LENGTH} < ${MIN_LENGTH} characters)")
+elif [ $SUBJECT_LENGTH -gt $MAX_LENGTH ]; then
+    WARNINGS+=("Subject line is long (${SUBJECT_LENGTH} > ${MAX_LENGTH} characters)")
+fi
+
+# Check for conventional commit format
+if [[ "$SUBJECT" =~ ^([a-z]+)(\(.+\))?:\ .+ ]]; then
+    TYPE="${BASH_REMATCH[1]}"
+    SCOPE="${BASH_REMATCH[2]}"
+    
+    # Validate commit type
+    if [[ ! " ${VALID_TYPES[@]} " =~ " ${TYPE} " ]]; then
+        VALID=false
+        ERRORS+=("Invalid commit type '${TYPE}'. Valid types: ${VALID_TYPES[*]}")
+    else
+        echo -e "${CHECK} Valid conventional commit format: ${BLUE}${TYPE}${NC}${SCOPE}"
+    fi
+    
+    # Check if subject starts with uppercase after colon
+    REST="${SUBJECT#*: }"
+    if [[ "$REST" =~ ^[A-Z] ]]; then
+        WARNINGS+=("Subject description should start with lowercase letter")
+    fi
+    
+    # Check if subject ends with period
+    if [[ "$SUBJECT" =~ \.$ ]]; then
+        WARNINGS+=("Subject line should not end with a period")
+    fi
+    
+else
+    WARNINGS+=("Consider using conventional commit format: type(scope): description")
+    echo -e "${INFO} Example: ${BLUE}feat(auth): add password reset functionality${NC}"
+fi
+
+# Check for imperative mood indicators
+IMPERATIVE_INDICATORS=("add" "fix" "update" "remove" "implement" "create" "delete" "modify" "change" "improve")
+FOUND_IMPERATIVE=false
+
+for indicator in "${IMPERATIVE_INDICATORS[@]}"; do
+    if [[ "$SUBJECT" =~ (^|[^a-z])${indicator}([^a-z]|$) ]]; then
+        FOUND_IMPERATIVE=true
+        break
+    fi
+done
+
+if [ "$FOUND_IMPERATIVE" = false ]; then
+    WARNINGS+=("Consider using imperative mood (e.g., 'add', 'fix', 'update')")
+fi
+
+# Check body lines (if present)
+BODY_LINES=$(echo "$COMMIT_MSG" | tail -n +3)
+if [ -n "$BODY_LINES" ]; then
+    while IFS= read -r line; do
+        # Skip empty lines and comments
+        if [[ -n "$line" && ! "$line" =~ ^# ]]; then
+            LINE_LENGTH=${#line}
+            if [ $LINE_LENGTH -gt $MAX_BODY_LINE_LENGTH ]; then
+                WARNINGS+=("Body line too long (${LINE_LENGTH} > ${MAX_BODY_LINE_LENGTH} characters): ${line:0:50}...")
+            fi
+        fi
+    done <<< "$BODY_LINES"
+fi
+
+# Check for common issues
+if [[ "$SUBJECT" =~ ^[Uu]pdate ]]; then
+    WARNINGS+=("'Update' is vague. Be more specific about what was updated")
+fi
+
+if [[ "$SUBJECT" =~ ^[Ff]ix ]]; then
+    WARNINGS+=("Consider specifying what was fixed: 'fix: resolve null pointer in user auth'")
+fi
+
+# Display results
+echo ""
+if [ ${#ERRORS[@]} -gt 0 ]; then
+    echo -e "${ERROR} Commit message validation failed:"
+    for error in "${ERRORS[@]}"; do
+        echo -e "  ${ERROR} $error"
+    done
+fi
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
+    echo -e "${WARNING} Commit message warnings:"
+    for warning in "${WARNINGS[@]}"; do
+        echo -e "  ${WARNING} $warning"
+    done
+fi
+
+if [ "$VALID" = true ]; then
+    if [ ${#WARNINGS[@]} -eq 0 ]; then
+        echo -e "${CHECK} Commit message validation passed!"
+    else
+        echo -e "${CHECK} Commit message is valid (with warnings)"
+    fi
+    echo ""
+    echo -e "${INFO} Commit message preview:"
+    echo -e "${BLUE}${SUBJECT}${NC}"
+    if [ -n "$BODY_LINES" ]; then
+        echo ""
+        echo "$BODY_LINES" | head -n 3
+        if [ $(echo "$BODY_LINES" | wc -l) -gt 3 ]; then
+            echo "..."
+        fi
+    fi
+else
+    echo ""
+    echo -e "${ERROR} Please fix the commit message and try again"
+    echo ""
+    echo -e "${INFO} Commit message best practices:"
+    echo -e "  • Use conventional commit format: type(scope): description"
+    echo -e "  • Keep subject line under 72 characters"
+    echo -e "  • Use imperative mood (add, fix, update, not added, fixed, updated)"
+    echo -e "  • Don't end subject with a period"
+    echo -e "  • Separate subject and body with a blank line"
+    echo -e "  • Wrap body lines at 100 characters"
+    echo ""
+    echo -e "${INFO} Examples:"
+    echo -e "  ${BLUE}feat(auth): add OAuth2 integration${NC}"
+    echo -e "  ${BLUE}fix(api): resolve timeout in user endpoint${NC}"
+    echo -e "  ${BLUE}docs(readme): update installation instructions${NC}"
+    exit 1
+fi

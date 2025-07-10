@@ -1,0 +1,29 @@
+{
+  "threshold": 0.1,
+  "reporters": ["html", "json", "console"],
+  "absolute": true,
+  "gitignore": true,
+  "ignore": [
+    "node_modules/**",
+    ".next/**",
+    "coverage/**",
+    "dist/**",
+    "build/**",
+    "**/*.min.js",
+    "**/*.map",
+    "**/*.test.{js,ts,tsx}",
+    "**/*.spec.{js,ts,tsx}",
+    "**/*.stories.{js,ts,tsx}",
+    "playwright/**",
+    "cypress/**",
+    "docs/**",
+    "lighthouse/**",
+    "reports/**"
+  ],
+  "formats": ["javascript", "typescript", "jsx", "tsx"],
+  "minLines": 10,
+  "minTokens": 70,
+  "maxLines": 500,
+  "maxSize": "30kb",
+  "output": "./reports/jscpd"
+}

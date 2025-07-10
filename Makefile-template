@@ -1,0 +1,292 @@
+# Complete Quality Suite Makefile Template
+# Comprehensive quality and development commands for TypeScript/JavaScript projects
+# Copy this to your project root as 'Makefile'
+
+.PHONY: help install dev build test lint format type-check security dead-code duplication maintainability quality quality-fix clean import-sorting
+
+# Default target
+help:
+	@echo "Complete Quality Suite - Development Commands"
+	@echo "============================================="
+	@echo ""
+	@echo "Development:"
+	@echo "  install          Install dependencies and setup environment"
+	@echo "  dev              Start development server"
+	@echo "  build            Build for production"
+	@echo "  start            Start production server"
+	@echo "  clean            Clean build artifacts and cache"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test             Run unit tests"
+	@echo "  test-watch       Run tests in watch mode"
+	@echo "  test-coverage    Run tests with coverage report"
+	@echo ""
+	@echo "Code Quality (11-Step Modular Workflow):"
+	@echo "  format           Check code formatting (Prettier)"
+	@echo "  format-fix       Format code with auto-fix"
+	@echo "  import-sorting   Check import sorting and organization"
+	@echo "  import-sorting-fix Fix import sorting"
+	@echo "  lint             Run linting (ESLint + SonarJS)"
+	@echo "  lint-fix         Run linting with auto-fix"
+	@echo "  type-check       Run TypeScript type checking"
+	@echo "  security         Run security analysis (ESLint security + npm audit)"
+	@echo "  dead-code        Find dead code (ts-prune)"
+	@echo "  duplication      Code duplication detection (jscpd)"
+	@echo "  complexity       Code complexity analysis (ESLint complexity)"
+	@echo "  maintainability  Code maintainability analysis (ESComplex)"
+	@echo "  dependencies     Dependency analysis (dependency-cruiser)"
+	@echo ""
+	@echo "Quality Suites:"
+	@echo "  quality          Run all quality checks (comprehensive 11-step workflow)"
+	@echo "  quality-fix      Run quality checks with auto-fix where possible"
+	@echo "  quality-fast     Run essential quality checks only"
+	@echo "  quality-security Run security analysis only"
+	@echo "  quality-analysis Run code analysis tools only"
+	@echo ""
+	@echo "Environment:"
+	@echo "  setup-env        Setup development environment"
+	@echo "  check-env        Check environment and tool availability"
+	@echo "  install-tools    Install additional quality tools"
+
+# Dependencies
+install:
+	@echo "Installing dependencies..."
+	npm install
+
+# Development server
+dev:
+	@echo "Starting development server..."
+	npm run dev
+
+# Production build
+build:
+	@echo "Building for production..."
+	npm run build
+
+# Production server
+start:
+	@echo "Starting production server..."
+	npm run start
+
+# Testing
+test:
+	@echo "Running unit tests..."
+	npm run test
+
+test-watch:
+	@echo "Running tests in watch mode..."
+	npm run test:watch
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	npm run test:coverage
+
+# Code quality - unified quality-check.cjs interface (11-Step Modular Workflow)
+
+# 1. Formatting
+format:
+	@echo "Checking code formatting..."
+	@node scripts/quality-check.cjs prettier
+
+format-fix:
+	@echo "Formatting code with auto-fix..."
+	@node scripts/quality-check.cjs prettier --fix
+
+# 2. Import Sorting
+import-sorting:
+	@echo "Checking import sorting..."
+	@node scripts/quality-check.cjs import-sorting
+
+import-sorting-fix:
+	@echo "Fixing import sorting..."
+	@node scripts/quality-check.cjs import-sorting --fix
+
+# 3. Linting
+linting:
+	@echo "Running code quality linting..."
+	@node scripts/quality-check.cjs linting
+
+linting-fix:
+	@echo "Fixing code quality issues..."
+	@node scripts/quality-check.cjs linting --fix
+
+lint:
+	@echo "Running code quality linting..."
+	@node scripts/quality-check.cjs linting
+
+lint-fix:
+	@echo "Fixing code quality issues..."
+	@node scripts/quality-check.cjs linting --fix
+
+# 4. Type Checking
+type-check:
+	@echo "Running TypeScript type checking..."
+	@node scripts/quality-check.cjs type-checking
+
+# 5-6. Security Analysis
+security:
+	@echo "Running security analysis..."
+	@node scripts/quality-check.cjs security
+
+security-scanning:
+	@echo "Running security vulnerability scanning..."
+	@node scripts/quality-check.cjs security-scanning
+
+vulnerability-checking:
+	@echo "Running dependency vulnerability checking..."
+	@node scripts/quality-check.cjs vulnerability-checking
+
+# 7. Dead Code Detection
+dead-code:
+	@echo "Finding dead code..."
+	@node scripts/quality-check.cjs dead-code
+
+# 8. Duplication Analysis
+duplication:
+	@echo "Analyzing code duplication..."
+	@node scripts/quality-check.cjs duplication
+
+# 9. Complexity Analysis
+complexity:
+	@echo "Analyzing code complexity..."
+	@node scripts/quality-check.cjs complexity
+
+# 10. Maintainability
+maintainability:
+	@echo "Analyzing code maintainability..."
+	@node scripts/quality-check.cjs maintainability
+
+# 11. Dependency Analysis
+dependencies:
+	@echo "Analyzing dependencies..."
+	@node scripts/quality-check.cjs dependency-check
+
+# Backward compatibility aliases
+isort: import-sorting
+isort-fix: import-sorting-fix
+
+# Quality Suites
+quality:
+	@echo "Running comprehensive quality checks (11-step workflow)..."
+	@node scripts/quality-check.cjs all
+
+quality-fix:
+	@echo "Running quality checks with auto-fix..."
+	@node scripts/quality-check.cjs all --fix
+
+quality-fast:
+	@echo "Running essential quality checks..."
+	@node scripts/quality-check.cjs required
+
+quality-security:
+	@echo "Running security analysis..."
+	@node scripts/quality-check.cjs security
+
+quality-analysis:
+	@echo "Running code analysis..."
+	@node scripts/quality-check.cjs analysis
+
+# Grouped Quality Checks
+quality-formatting:
+	@echo "Running formatting checks..."
+	@node scripts/quality-check.cjs formatting
+
+quality-linting:
+	@echo "Running linting checks..."
+	@node scripts/quality-check.cjs linting
+
+# Environment Management
+setup-env:
+	@echo "Setting up development environment..."
+	@npm install
+	@echo "Checking tool availability..."
+	@$(MAKE) check-env
+	@echo "Installing additional tools..."
+	@$(MAKE) install-tools
+	@echo "✅ Environment setup completed"
+
+check-env:
+	@echo "Checking environment and tool availability..."
+	@echo "Node.js version:"
+	@node --version
+	@echo "npm version:"
+	@npm --version
+	@echo "TypeScript version:"
+	@npx tsc --version || echo "❌ TypeScript not available"
+	@echo "ESLint version:"
+	@npx eslint --version || echo "❌ ESLint not available"
+	@echo "Prettier version:"
+	@npx prettier --version || echo "❌ Prettier not available"
+	@echo "jscpd version:"
+	@npx jscpd --version || echo "❌ jscpd not available - run 'make install-tools'"
+	@echo "ts-prune availability:"
+	@npx ts-prune --version || echo "❌ ts-prune not available - run 'make install-tools'"
+
+install-tools:
+	@echo "Installing additional quality tools..."
+	@npm install -D jscpd ts-prune dependency-cruiser typhonjs-escomplex-module
+	@npm install -D eslint-plugin-security eslint-plugin-sonarjs
+	@npm install -D eslint-plugin-import eslint-plugin-unused-imports
+	@npm install -D prettier eslint-config-prettier
+	@echo "✅ Quality tools installed"
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf .next
+	@rm -rf dist
+	@rm -rf build
+	@rm -rf node_modules/.cache
+	@rm -rf reports
+	@rm -f .eslintcache
+	@rm -f .tsbuildinfo
+	@echo "✅ Clean completed"
+
+clean-all: clean
+	@echo "Deep cleaning..."
+	@rm -rf node_modules
+	@rm -f package-lock.json
+	@echo "Run 'make install' to reinstall dependencies"
+
+# CI/CD helpers
+ci-install:
+	@echo "Installing dependencies for CI..."
+	@npm ci
+
+ci-quality:
+	@echo "Running CI quality checks..."
+	@node scripts/quality-check.cjs all --quiet
+
+ci-test:
+	@echo "Running CI tests..."
+	@npm test -- --ci --coverage --watchAll=false
+
+ci-build:
+	@echo "Running CI build..."
+	@npm run build
+
+# Development workflows
+quick-check:
+	@echo "Running quick quality check..."
+	@$(MAKE) format
+	@$(MAKE) lint
+	@$(MAKE) type-check
+
+pre-commit:
+	@echo "Running pre-commit checks..."
+	@$(MAKE) quality-fix
+	@$(MAKE) test
+
+pre-push:
+	@echo "Running pre-push checks..."
+	@$(MAKE) quality
+	@$(MAKE) test
+	@$(MAKE) build
+
+# Setup git hooks
+setup-hooks:
+	@echo "Setting up git hooks..."
+	@npx husky install
+	@npx husky add .husky/pre-commit "make pre-commit"
+	@npx husky add .husky/pre-push "make pre-push"
+	@echo "✅ Git hooks configured" 

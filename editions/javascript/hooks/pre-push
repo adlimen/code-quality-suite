@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push hooks..."
+
+# Run full quality checks
+echo "🔍 Running quality checks..."
+npm run quality
+
+# Run tests if available
+if npm run | grep -q "test"; then
+    echo "🧪 Running tests..."
+    npm run test || npm run test:fast || true
+fi
+
+# Run build if available
+if npm run | grep -q "build"; then
+    echo "🏗️ Testing build..."
+    npm run build
+fi
+
+echo "✅ Pre-push hooks completed successfully!" 

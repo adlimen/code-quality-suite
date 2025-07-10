@@ -1,0 +1,35 @@
+# Complete Quality Suite - Python Edition
+# Quality assurance tools and dependencies
+
+# Core formatting and linting
+black>=23.0.0,<25.0.0
+isort>=5.12.0,<6.0.0
+ruff>=0.1.0,<1.0.0
+
+# Type checking
+mypy>=1.8.0,<2.0.0
+types-requests>=2.31.0  # Common type stubs
+
+# Security analysis
+bandit[toml]>=1.7.5,<2.0.0
+safety>=3.0.0,<4.0.0
+
+# Code analysis
+vulture>=2.9.0,<3.0.0
+radon>=6.0.0,<7.0.0
+
+# Testing and coverage (optional but recommended)
+pytest>=7.4.0,<8.0.0
+pytest-cov>=4.1.0,<5.0.0
+pytest-mock>=3.11.0,<4.0.0
+
+# Pre-commit hooks (optional)
+pre-commit>=3.4.0,<4.0.0
+
+# Documentation (optional)
+sphinx>=7.1.0,<8.0.0
+sphinx-rtd-theme>=1.3.0,<2.0.0
+
+# Development utilities (optional)
+ipython>=8.15.0,<9.0.0  # Enhanced REPL
+rich>=13.5.0,<14.0.0    # Rich terminal output

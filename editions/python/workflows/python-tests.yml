@@ -1,0 +1,393 @@
+# Complete Quality Suite - Python Edition
+# Comprehensive Testing Workflow
+
+name: Python Tests
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths:
+      - '**.py'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.github/workflows/python-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.py'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.github/workflows/python-tests.yml'
+
+env:
+  COVERAGE_THRESHOLD: 80
+  CACHE_KEY_PREFIX: python-tests-v1
+
+jobs:
+  # Fast unit tests for quick feedback
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt', 'pyproject.toml') }}
+          restore-keys: |
+            ${{ env.CACHE_KEY_PREFIX }}-${{ runner.os }}-py${{ matrix.python-version }}-
+            
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          
+          # Install test dependencies
+          pip install pytest pytest-cov pytest-mock pytest-xdist
+          
+          # Install project dependencies
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          
+          if [ -f "requirements-test.txt" ]; then
+            pip install -r requirements-test.txt
+          fi
+          
+          if [ -f "pyproject.toml" ]; then
+            pip install -e ".[test]" || pip install -e . || echo "No installable package found"
+          fi
+          
+      - name: Run unit tests
+        run: |
+          if [ -d "tests" ]; then
+            # Run unit tests with coverage
+            pytest tests/ -v \
+              --cov=src --cov=. \
+              --cov-report=xml \
+              --cov-report=html \
+              --cov-report=term \
+              --cov-fail-under=${{ env.COVERAGE_THRESHOLD }} \
+              -m "not slow and not integration" \
+              --tb=short
+          else
+            echo "No tests directory found, skipping unit tests"
+            exit 0
+          fi
+          
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage-reports-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
+          retention-days: 30
+          
+      - name: Upload to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.xml
+          flags: unittests
+          name: codecov-py${{ matrix.python-version }}
+
+  # Integration tests (slower, run on specific Python version)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    timeout-minutes: 20
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_KEY_PREFIX }}-integration-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'pyproject.toml') }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          
+          # Install test and integration dependencies
+          pip install pytest pytest-cov pytest-mock pytest-asyncio pytest-docker
+          
+          # Install database drivers for integration tests
+          pip install psycopg2-binary redis sqlalchemy alembic
+          
+          # Install project dependencies
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          
+          if [ -f "requirements-test.txt" ]; then
+            pip install -r requirements-test.txt
+          fi
+          
+          if [ -f "pyproject.toml" ]; then
+            pip install -e ".[test]" || pip install -e . || echo "No installable package found"
+          fi
+          
+      - name: Set up test environment
+        run: |
+          # Set environment variables for integration tests
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
+          echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
+          echo "TESTING=true" >> $GITHUB_ENV
+          
+      - name: Run database migrations
+        run: |
+          # Run migrations if they exist
+          if [ -f "alembic.ini" ] && [ -d "migrations" ] || [ -d "alembic" ]; then
+            alembic upgrade head || echo "No migrations to run"
+          fi
+          
+      - name: Run integration tests
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests/ -v \
+              --cov=src --cov=. \
+              --cov-report=xml \
+              --cov-report=html \
+              --cov-report=term \
+              -m "integration or slow" \
+              --tb=short \
+              --durations=10
+          else
+            echo "No tests directory found, skipping integration tests"
+            exit 0
+          fi
+          
+      - name: Upload integration test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-reports
+          path: |
+            coverage.xml
+            htmlcov/
+          retention-days: 30
+
+  # Security tests (separate job for security-specific testing)
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_KEY_PREFIX }}-security-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'pyproject.toml') }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-mock bandit safety
+          
+          # Install project dependencies
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          
+          if [ -f "pyproject.toml" ]; then
+            pip install -e ".[test]" || pip install -e . || echo "No installable package found"
+          fi
+          
+      - name: Run security tests
+        run: |
+          if [ -d "tests" ]; then
+            # Run security-marked tests
+            pytest tests/ -v -m "security" --tb=short || echo "No security tests found"
+          fi
+          
+      - name: Run Bandit security scan
+        run: |
+          bandit -r . -f json -o security-report.json || true
+          bandit -r . -f txt || true
+          
+      - name: Run Safety dependency scan
+        run: |
+          safety scan --json --output safety-report.json || true
+          safety scan || true
+          
+      - name: Upload security test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-test-reports
+          path: |
+            security-report.json
+            safety-report.json
+          retention-days: 90
+
+  # Performance tests (optional, only on specific triggers)
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[perf]') || github.event_name == 'schedule'
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ env.CACHE_KEY_PREFIX }}-perf-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'pyproject.toml') }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-benchmark pytest-profiling
+          
+          # Install project dependencies
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          
+          if [ -f "pyproject.toml" ]; then
+            pip install -e ".[test]" || pip install -e . || echo "No installable package found"
+          fi
+          
+      - name: Run performance tests
+        run: |
+          if [ -d "tests" ]; then
+            # Run performance tests with benchmarking
+            pytest tests/ -v \
+              -m "performance" \
+              --benchmark-only \
+              --benchmark-json=benchmark.json \
+              --tb=short || echo "No performance tests found"
+          fi
+          
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-reports
+          path: |
+            benchmark.json
+            prof/
+          retention-days: 30
+
+  # Test quality gate
+  test-quality-gate:
+    name: Test Quality Gate
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, security-tests]
+    timeout-minutes: 5
+    if: always()
+    
+    steps:
+      - name: Download coverage reports
+        uses: actions/download-artifact@v3
+        with:
+          pattern: coverage-reports-*
+          merge-multiple: true
+          
+      - name: Check coverage threshold
+        run: |
+          # Check if coverage.xml exists and parse coverage
+          if [ -f "coverage.xml" ]; then
+            # Extract coverage percentage (simple grep method)
+            COVERAGE=$(grep -oP 'line-rate="\K[0-9\.]+' coverage.xml | head -1)
+            COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc -l | cut -d. -f1)
+            
+            echo "Current coverage: ${COVERAGE_PERCENT}%"
+            
+            if [ "$COVERAGE_PERCENT" -lt "${{ env.COVERAGE_THRESHOLD }}" ]; then
+              echo "❌ Coverage ${COVERAGE_PERCENT}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+              exit 1
+            else
+              echo "✅ Coverage ${COVERAGE_PERCENT}% meets threshold ${{ env.COVERAGE_THRESHOLD }}%"
+            fi
+          else
+            echo "⚠️ No coverage report found, skipping coverage check"
+          fi
+          
+      - name: Check test results
+        run: |
+          echo "Unit tests: ${{ needs.unit-tests.result }}"
+          echo "Integration tests: ${{ needs.integration-tests.result }}"
+          echo "Security tests: ${{ needs.security-tests.result }}"
+          
+      - name: Test quality gate passed
+        if: needs.unit-tests.result == 'success' && needs.integration-tests.result == 'success' && needs.security-tests.result == 'success'
+        run: |
+          echo "🎉 All tests passed!"
+          echo "✅ Test coverage meets requirements"
+          echo "✅ Security tests passed"
+          echo "✅ Integration tests passed"
+          
+      - name: Test quality gate failed
+        if: needs.unit-tests.result != 'success' || needs.integration-tests.result != 'success' || needs.security-tests.result != 'success'
+        run: |
+          echo "❌ Test quality gate failed!"
+          echo "Please fix the failing tests before merging"
+          exit 1

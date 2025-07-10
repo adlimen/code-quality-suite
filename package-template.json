@@ -1,0 +1,55 @@
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "format": "node scripts/quality-check.cjs prettier",
+    "format:fix": "node scripts/quality-check.cjs prettier --fix",
+    "import-sorting": "node scripts/quality-check.cjs import-sorting",
+    "import-sorting:fix": "node scripts/quality-check.cjs import-sorting --fix",
+    "lint": "node scripts/quality-check.cjs linting",
+    "lint:fix": "node scripts/quality-check.cjs linting --fix",
+    "type-check": "node scripts/quality-check.cjs type-checking",
+    "security": "node scripts/quality-check.cjs security",
+    "dead-code": "node scripts/quality-check.cjs dead-code",
+    "duplication": "node scripts/quality-check.cjs duplication",
+    "complexity": "node scripts/quality-check.cjs complexity",
+    "maintainability": "node scripts/quality-check.cjs maintainability",
+    "dependencies": "node scripts/quality-check.cjs dependency-check",
+    "quality": "node scripts/quality-check.cjs all",
+    "quality:fix": "node scripts/quality-check.cjs all --fix",
+    "quality:fast": "node scripts/quality-check.cjs required",
+    "quality:security": "node scripts/quality-check.cjs security",
+    "quality:analysis": "node scripts/quality-check.cjs analysis",
+    "pre-commit": "lint-staged",
+    "setup-hooks": "husky install && chmod +x .husky/pre-commit && chmod +x .husky/pre-push"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "dependency-cruiser": "^16.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import": "^2.30.0",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-sonarjs": "^2.0.4",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "husky": "^9.0.0",
+    "jscpd": "^4.0.5",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "ts-prune": "^0.10.0",
+    "typescript": "^5.4.0",
+    "typhonjs-escomplex-module": "^0.1.0"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,js,jsx}": [
+      "node scripts/quality-check.cjs prettier --fix",
+      "node scripts/quality-check.cjs import-sorting --fix",
+      "node scripts/quality-check.cjs linting --fix"
+    ],
+    "**/*.{json,md,css,scss,yml,yaml}": [
+      "node scripts/quality-check.cjs prettier --fix"
+    ]
+  }
+}
