@@ -307,6 +307,21 @@ interactive_configuration() {
         read -p "Backend directory (leave empty if none): " BACKEND_DIR
     fi
     
+    # Clean up directory paths (remove leading slashes for relative paths)
+    if [[ "$FRONTEND_DIR" == /* ]] && [[ "$FRONTEND_DIR" != "$PROJECT_ROOT"* ]]; then
+        print_message "warning" "Frontend directory appears to be absolute path outside project: $FRONTEND_DIR"
+    elif [[ "$FRONTEND_DIR" == /* ]]; then
+        # Convert absolute to relative if it's within project
+        FRONTEND_DIR="${FRONTEND_DIR#$PROJECT_ROOT/}"
+    fi
+    
+    if [[ "$BACKEND_DIR" == /* ]] && [[ "$BACKEND_DIR" != "$PROJECT_ROOT"* ]]; then
+        print_message "warning" "Backend directory appears to be absolute path outside project: $BACKEND_DIR"
+    elif [[ "$BACKEND_DIR" == /* ]]; then
+        # Convert absolute to relative if it's within project
+        BACKEND_DIR="${BACKEND_DIR#$PROJECT_ROOT/}"
+    fi
+    
     # Interface preference
     echo ""
     echo "Choose your preferred interface:"
@@ -555,8 +570,31 @@ install_javascript_system() {
     
     print_step "5a" "Installing JavaScript/TypeScript quality system..."
     
+    # Ensure we're in the project root
+    cd "$PROJECT_ROOT"
+    
     local target_dir="${FRONTEND_DIR:-$PROJECT_ROOT}"
-    cd "$target_dir"
+    # Handle relative vs absolute paths for frontend
+    if [[ "$FRONTEND_DIR" != "" && "$FRONTEND_DIR" != "." ]]; then
+        if [[ "$target_dir" == /* ]]; then
+            # Absolute path - use as is if it exists
+            if [ ! -d "$target_dir" ]; then
+                print_message "error" "Frontend directory does not exist: $target_dir"
+                return 1
+            fi
+        else
+            # Relative path - make it relative to PROJECT_ROOT
+            target_dir="$PROJECT_ROOT/$FRONTEND_DIR"
+            if [ ! -d "$target_dir" ]; then
+                print_message "warning" "Frontend directory does not exist, creating: $target_dir"
+                mkdir -p "$target_dir"
+            fi
+        fi
+        cd "$target_dir"
+    else
+        # Use project root
+        target_dir="$PROJECT_ROOT"
+    fi
     
     # Create scripts directory
     mkdir -p scripts/adlimen
@@ -865,7 +903,26 @@ install_python_system() {
     
     print_step "5b" "Installing Python quality system..."
     
+    # Ensure we're in the project root
+    cd "$PROJECT_ROOT"
+    
     local target_dir="${BACKEND_DIR:-$PROJECT_ROOT}"
+    # Handle relative vs absolute paths
+    if [[ "$target_dir" == /* ]]; then
+        # Absolute path - use as is if it exists
+        if [ ! -d "$target_dir" ]; then
+            print_message "error" "Backend directory does not exist: $target_dir"
+            return 1
+        fi
+    else
+        # Relative path - make it relative to PROJECT_ROOT
+        target_dir="$PROJECT_ROOT/$BACKEND_DIR"
+        if [ ! -d "$target_dir" ]; then
+            print_message "warning" "Backend directory does not exist, creating: $target_dir"
+            mkdir -p "$target_dir"
+        fi
+    fi
+    
     cd "$target_dir"
     
     # Create Python quality script
