@@ -1,0 +1,85 @@
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "installedDate": "2025-07-10T12:00:00Z",
+    "projectRoot": "/path/to/project",
+    "projectType": "frontend-only",
+    "languages": ["javascript"],
+    "frameworks": ["react"],
+    "structure": {
+      "frontendDir": "src",
+      "backendDir": "",
+      "componentsDir": "src/components",
+      "pagesDir": "src/pages",
+      "hooksDir": "src/hooks",
+      "utilsDir": "src/utils",
+      "assetsDir": "src/assets",
+      "testDir": "src/__tests__"
+    },
+    "interface": "npm",
+    "thresholds": {
+      "complexity": 8,
+      "maintainability": 75,
+      "duplication": 5,
+      "coverage": 85
+    },
+    "features": {
+      "security": {
+        "enabled": true,
+        "level": "standard",
+        "sast": true,
+        "dependencyScanning": true
+      },
+      "gitHooks": true,
+      "autoFix": true,
+      "bundleAnalysis": true,
+      "performanceAnalysis": true,
+      "accessibilityChecks": true,
+      "ciProvider": "github",
+      "reporting": {
+        "format": ["json", "html"],
+        "destination": "reports/",
+        "upload": false
+      }
+    },
+    "paths": {
+      "configFile": ".adlimen-config.json",
+      "qualitySuiteDir": ".adlimen-code-quality-suite",
+      "scriptsDir": ".adlimen-code-quality-suite/scripts",
+      "reportsDir": "reports",
+      "eslintConfigsDir": ".eslint-configs"
+    },
+    "customRules": {
+      "javascript": {
+        "overrides": {
+          "complexity": ["error", { "max": 8 }],
+          "max-depth": ["error", 4],
+          "max-lines-per-function": ["error", 40],
+          "react/jsx-max-depth": ["error", { "max": 5 }],
+          "react-hooks/exhaustive-deps": "error",
+          "jsx-a11y/alt-text": "error"
+        }
+      }
+    },
+    "frontend": {
+      "framework": "react",
+      "bundler": "webpack",
+      "typescript": true,
+      "testing": {
+        "framework": "jest",
+        "e2e": "cypress",
+        "coverage": true
+      },
+      "performance": {
+        "bundleSize": true,
+        "lighthouse": true,
+        "coreWebVitals": true
+      },
+      "accessibility": {
+        "enabled": true,
+        "level": "AA",
+        "automation": true
+      }
+    }
+  }
+}

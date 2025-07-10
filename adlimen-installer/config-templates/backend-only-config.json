@@ -1,0 +1,95 @@
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "installedDate": "2025-07-10T12:00:00Z",
+    "projectRoot": "/path/to/project",
+    "projectType": "backend-only",
+    "languages": ["python"],
+    "frameworks": ["flask"],
+    "structure": {
+      "frontendDir": "",
+      "backendDir": "src",
+      "apiDir": "src/api",
+      "modelsDir": "src/models",
+      "servicesDir": "src/services",
+      "utilsDir": "src/utils",
+      "configDir": "src/config",
+      "testDir": "tests"
+    },
+    "interface": "make",
+    "thresholds": {
+      "complexity": 6,
+      "maintainability": 80,
+      "duplication": 3,
+      "coverage": 90
+    },
+    "features": {
+      "security": {
+        "enabled": true,
+        "level": "strict",
+        "sast": true,
+        "dependencyScanning": true,
+        "secretsScanning": true
+      },
+      "gitHooks": true,
+      "autoFix": true,
+      "apiDocumentation": true,
+      "performanceAnalysis": true,
+      "ciProvider": "github",
+      "reporting": {
+        "format": ["json", "html", "junit"],
+        "destination": "reports/",
+        "upload": false
+      }
+    },
+    "paths": {
+      "configFile": ".adlimen-config.json",
+      "qualitySuiteDir": ".adlimen-code-quality-suite",
+      "scriptsDir": ".adlimen-code-quality-suite/scripts",
+      "reportsDir": "reports",
+      "pythonConfigFile": "pyproject.toml"
+    },
+    "customRules": {
+      "python": {
+        "overrides": {
+          "max-line-length": 88,
+          "max-complexity": 6,
+          "max-function-length": 40,
+          "max-class-length": 200,
+          "max-module-length": 500
+        }
+      }
+    },
+    "backend": {
+      "framework": "flask",
+      "database": "postgresql",
+      "orm": "sqlalchemy",
+      "async": false,
+      "api": {
+        "type": "rest",
+        "documentation": "openapi",
+        "validation": true,
+        "serialization": "marshmallow"
+      },
+      "testing": {
+        "framework": "pytest",
+        "coverage": true,
+        "integration": true,
+        "mocking": "unittest.mock"
+      },
+      "security": {
+        "authentication": true,
+        "authorization": true,
+        "rateLimiting": true,
+        "inputValidation": true,
+        "sqlInjectionPrevention": true
+      },
+      "monitoring": {
+        "logging": true,
+        "metrics": true,
+        "healthChecks": true,
+        "errorTracking": true
+      }
+    }
+  }
+}

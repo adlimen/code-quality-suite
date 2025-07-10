@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Complete Quality Suite - Python Edition
-Comprehensive quality orchestrator based on Levero backend improvements
-11-Step Modular Quality Workflow for Python projects
+AdLimen Code Quality Suite - Python Edition
+Comprehensive quality orchestrator for Python projects
+11-Step Modular Quality Workflow with enterprise-grade standards
 """
 
 import os

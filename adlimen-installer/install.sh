@@ -31,15 +31,18 @@ WRENCH="🔧"
 SHIELD="🛡️"
 
 # Default configuration
-DEFAULT_CONFIG_FILE=".adlimen.config.json"
+DEFAULT_CONFIG_FILE=".adlimen-config.json"
 INSTALLER_VERSION="1.0.0"
 INSTALLER_DATE="2025-07-10"
+QUALITY_SUITE_DIR=".adlimen-code-quality-suite"
 
 # Global variables
 PROJECT_ROOT=""
 LANGUAGES=()
 FRONTEND_DIR=""
 BACKEND_DIR=""
+PACKAGES_DIR=""
+PREFERRED_STRUCTURE=""
 PREFERRED_INTERFACE=""
 COMPLEXITY_THRESHOLD=10
 MAINTAINABILITY_THRESHOLD=70
@@ -125,9 +128,85 @@ detect_project_structure() {
         fi
     fi
     
-    # Detect common directory structures
-    local possible_frontend=("frontend" "client" "web" "ui" "app" "src/frontend" "packages/frontend")
-    local possible_backend=("backend" "server" "api" "src/backend" "packages/backend")
+    # Detect monorepo vs single project structure
+    local is_monorepo=false
+    
+    # Check for monorepo indicators
+    if [ -f "lerna.json" ] || [ -f "rush.json" ] || [ -f "pnpm-workspace.yaml" ] || [ -f "yarn.lock" ] && [ -d "packages" ]; then
+        is_monorepo=true
+        print_message "info" "Monorepo structure detected"
+    elif [ -d "packages" ] && [ "$(find packages -mindepth 1 -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
+        is_monorepo=true
+        print_message "info" "Multi-package structure detected (potential monorepo)"
+    fi
+    
+    # Ask user about monorepo preference if detected
+    if [ "$is_monorepo" = true ]; then
+        echo ""
+        echo -e "${YELLOW}Monorepo Structure Detected${NC}"
+        echo "We detected what appears to be a monorepo structure."
+        echo ""
+        echo "Monorepo benefits:"
+        echo "  • Unified quality standards across packages"
+        echo "  • Centralized configuration and tooling"
+        echo "  • Consistent git hooks for all packages"
+        echo "  • Cross-package dependency analysis"
+        echo ""
+        echo "Project types:"
+        echo "1) Monorepo - Multiple packages with shared quality config"
+        echo "2) Standard project - Single unified codebase"
+        echo "3) Let me specify directories manually"
+        
+        read -p "How should we configure this project? [1-3]: " monorepo_choice
+        
+        case $monorepo_choice in
+            1)
+                print_message "success" "Configuring as monorepo with shared quality standards"
+                PREFERRED_STRUCTURE="monorepo"
+                ;;
+            2)
+                print_message "info" "Configuring as standard project"
+                PREFERRED_STRUCTURE="standard"
+                ;;
+            3)
+                print_message "info" "Manual directory configuration selected"
+                PREFERRED_STRUCTURE="manual"
+                ;;
+            *)
+                print_message "info" "Defaulting to monorepo configuration"
+                PREFERRED_STRUCTURE="monorepo"
+                ;;
+        esac
+    else
+        PREFERRED_STRUCTURE="standard"
+    fi
+    
+    # Detect common directory structures based on preference
+    if [ "$PREFERRED_STRUCTURE" = "monorepo" ]; then
+        # Look for packages in monorepo
+        local possible_packages=("packages" "apps" "libs" "modules")
+        for pkg_dir in "${possible_packages[@]}"; do
+            if [ -d "$pkg_dir" ]; then
+                print_message "success" "Package directory detected: ${pkg_dir}"
+                PACKAGES_DIR="$pkg_dir"
+                break
+            fi
+        done
+        
+        # Detect workspace structure
+        if [ -d "packages" ]; then
+            for pkg in packages/*/; do
+                if [ -d "$pkg" ]; then
+                    local pkg_name=$(basename "$pkg")
+                    print_message "info" "Package found: $pkg_name"
+                fi
+            done
+        fi
+    fi
+    
+    # Detect frontend/backend directories
+    local possible_frontend=("frontend" "client" "web" "ui" "app" "src/frontend" "packages/frontend" "apps/web" "apps/client")
+    local possible_backend=("backend" "server" "api" "src/backend" "packages/backend" "apps/api" "apps/server")
     
     for dir in "${possible_frontend[@]}"; do
         if [ -d "$dir" ]; then
@@ -254,8 +333,11 @@ save_configuration() {
     "projectRoot": "$PROJECT_ROOT",
     "languages": $(printf '%s\n' "${LANGUAGES[@]}" | jq -R . | jq -s .),
     "structure": {
+      "type": "$PREFERRED_STRUCTURE",
       "frontendDir": "$FRONTEND_DIR",
-      "backendDir": "$BACKEND_DIR"
+      "backendDir": "$BACKEND_DIR",
+      "packagesDir": "$PACKAGES_DIR",
+      "isMonorepo": $([ "$PREFERRED_STRUCTURE" = "monorepo" ] && echo "true" || echo "false")
     },
     "interface": "$PREFERRED_INTERFACE",
     "thresholds": {
@@ -890,9 +972,66 @@ EOF
     fi
 }
 
+# Update project .gitignore with AdLimen-specific entries
+update_gitignore() {
+    print_step "8" "Updating .gitignore with AdLimen entries..."
+    
+    local gitignore_file=".gitignore"
+    local adlimen_section_start="# === AdLimen Code Quality Suite ==="
+    local adlimen_section_end="# === End AdLimen Code Quality Suite ==="
+    
+    # Create .gitignore if it doesn't exist
+    if [ ! -f "$gitignore_file" ]; then
+        print_message "info" "Creating .gitignore file"
+        touch "$gitignore_file"
+    fi
+    
+    # Check if AdLimen section already exists
+    if grep -q "$adlimen_section_start" "$gitignore_file"; then
+        print_message "warning" "AdLimen entries already exist in .gitignore, skipping..."
+        return
+    fi
+    
+    # Add AdLimen-specific entries
+    print_message "info" "Adding AdLimen-specific entries to .gitignore"
+    
+    cat >> "$gitignore_file" << EOF
+
+$adlimen_section_start
+# AdLimen Code Quality Suite generated files and directories
+$CONFIG_FILE
+scripts/adlimen/
+reports/
+ADLIMEN-README.md
+.eslint-configs/
+.adlimen-code-quality-suite/
+
+# Quality reports and temporary files (various locations)
+quality-reports/
+reports/
+src/frontend/reports/
+src/backend/reports/
+*.quality-report.json
+*.duplication-report.json
+*.complexity-report.json
+
+# Tool-specific cache and temporary files
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.bandit
+.vulture-whitelist
+$adlimen_section_end
+EOF
+    
+    print_message "success" "AdLimen entries added to .gitignore"
+}
+
 # Generate documentation
 generate_documentation() {
-    print_step "8" "Generating documentation..."
+    print_step "9" "Generating documentation..."
     
     cat > ADLIMEN-README.md << EOF
 # AdLimen Quality Code System
@@ -901,9 +1040,11 @@ This project uses the AdLimen Quality Code System for comprehensive code quality
 
 ## Installed Configuration
 
+- **Project Type**: ${PREFERRED_STRUCTURE}
 - **Languages**: ${LANGUAGES[*]}
 - **Frontend Directory**: ${FRONTEND_DIR:-N/A}
 - **Backend Directory**: ${BACKEND_DIR:-N/A}
+- **Packages Directory**: ${PACKAGES_DIR:-N/A}
 - **Interface**: ${PREFERRED_INTERFACE}
 - **Security Scanning**: ${ENABLE_SECURITY}
 - **Git Hooks**: ${ENABLE_GIT_HOOKS}
@@ -1009,6 +1150,7 @@ main() {
     install_python_system
     setup_cicd_integration
     setup_git_hooks
+    update_gitignore
     generate_documentation
     
     print_summary

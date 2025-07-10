@@ -1,17 +1,79 @@
 # AdLimen Code Quality Suite
 
-A comprehensive code quality assurance system designed to be easily integrated into any development workflow. This modular system provides dedicated quality tooling for multiple programming languages with consistent patterns and practices.
+A comprehensive, enterprise-grade code quality assurance system designed for modern development workflows. This modular system provides dedicated quality tooling for multiple programming languages with consistent patterns and practices.
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Development-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/matteocervelli)
+
+## 🚀 Quick Start
+
+### Interactive Installation (Recommended)
+
+```bash
+# Clone the AdLimen Code Quality Suite
+git clone https://github.com/adlimen/code-quality-suite.git
+
+# Run the interactive installer
+cd code-quality-suite
+./adlimen-installer/install.sh
+
+# The installer will:
+# - Detect your project structure and languages
+# - Configure for monorepo or standard projects
+# - Setup quality tools and git hooks automatically
+# - Create customized configuration files
+```
+
+### Quick Commands
+
+```bash
+# Run complete quality analysis
+npm run adlimen:quality
+# or
+make adlimen-quality
+# or 
+node scripts/adlimen/quality-check.cjs all
+
+# With auto-fix
+npm run adlimen:quality:fix
+python python-quality-check.py all --fix
+```
+
+## 🛠️ 11-Step Quality Workflow
+
+The AdLimen Code Quality Suite implements a comprehensive 11-step quality workflow with specialized tools for each language:
+
+| Step | Category | JavaScript/TypeScript | Python |
+|------|----------|----------------------|--------|
+| **1** | **Code Formatting** | Prettier | Black |
+| **2** | **Import Sorting** | ESLint + Import plugins | isort |
+| **3** | **Code Linting** | ESLint | Ruff |
+| **4** | **Type Checking** | TypeScript Compiler (tsc) | MyPy |
+| **5** | **Security Scanning** | ESLint Security | Bandit |
+| **6** | **Vulnerability Checking** | npm audit | Safety |
+| **7** | **Dead Code Detection** | ts-prune | Vulture |
+| **8** | **Code Duplication** | jscpd | Custom AST-based analyzer |
+| **9** | **Complexity Analysis** | typhonjs-escomplex | Radon (Cyclomatic Complexity) |
+| **10** | **Maintainability** | Custom maintainability scorer | Radon (Maintainability Index) |
+| **11** | **Dependency Analysis** | dependency-cruiser | pipdeptree |
+
+### 🎯 Tool Selection Rationale
+
+- **Language-Native Tools**: Each tool is selected for optimal integration with its target language ecosystem
+- **Performance**: Fast execution for development workflow integration
+- **Accuracy**: High-precision analysis with minimal false positives
+- **Configurability**: Flexible thresholds and customization options
+- **Industry Standard**: Widely adopted tools with strong community support
 
 ## 🌟 Available Editions
 
 ### 📘 JavaScript/TypeScript Edition
 - **Location**: `editions/javascript/`
-- **Description**: Complete quality assurance for JS/TS projects
+- **Features**: Complete quality assurance for JS/TS projects, monorepo support
 - **Status**: ✅ Available
 
 ### 🐍 Python Edition
 - **Location**: `editions/python/`
-- **Description**: 11-step modular quality workflow with Safety vulnerability handling
+- **Features**: 11-step modular workflow with AST-based duplication analysis
 - **Status**: ✅ Available (Enhanced!)
 
 ### 🔮 Future Editions
@@ -19,445 +81,216 @@ A comprehensive code quality assurance system designed to be easily integrated i
 - **Rust Edition**: Planned
 - **Java Edition**: Planned
 
-## 🎯 Overview
+## 🎯 Key Features
 
-This system provides a complete quality assurance toolkit including:
+- 🪝 **Smart Git Hooks**: Pre-commit, pre-push automation with monorepo support
+- ⚙️ **CI/CD Integration**: GitHub Actions, GitLab CI, CircleCI workflows
+- 📊 **Unified Reporting**: Consistent quality metrics across languages
+- 🎛️ **Configurable Thresholds**: Customizable quality standards
+- 🏗️ **Monorepo Support**: Intelligent detection and configuration for monorepo structures
+- 🔧 **Auto-Fix Capabilities**: Automatic fixing where possible
+- 🛡️ **Security-First**: Comprehensive security scanning and vulnerability detection
 
-- 🎨 **Formatting**: Prettier, ESLint import sorting
-- 🔍 **Linting**: ESLint, TypeScript checking
-- 🔒 **Security**: ESLint Security, npm audit, SonarJS
-- 📊 **Analysis**: ts-prune (dead code), complexity analysis, dependency-cruiser, jscpd (duplication), typhonjs-escomplex (maintainability)
-- 🚀 **Performance**: Lighthouse, Bundle analyzer
-- 🪝 **Git Hooks**: Pre-commit, pre-push automation with Husky
-- ⚙️ **CI/CD**: GitHub Actions workflows
+## 📦 Usage Examples
 
-## 🚀 Quick Start
-
-### Option 1: Automatic Setup (Recommended)
-
-Copy the entire `complete-quality-suite` folder to your project root and run:
+### JavaScript/TypeScript Projects
 
 ```bash
-# Navigate to the quality system folder
-cd complete-quality-suite
+# Complete quality analysis
+npm run adlimen:quality
 
-# Run automatic setup
-node setup.js
-# or
-./setup.js
+# With auto-fix
+npm run adlimen:quality:fix
 
-# Install dependencies
-cd ..
-npm install
-
-# Setup git hooks
-npm run setup-hooks
-
-# Run initial quality check
-npm run quality
+# Specific checks
+npm run adlimen:lint:fix
+npm run adlimen:type-check
+npm run adlimen:security
 ```
 
-The automatic setup will:
-
-- ✅ Merge package.json with required dependencies and scripts
-- ✅ Copy configuration files (.jscpd.json, .lintstagedrc.js)
-- ✅ Install quality check scripts in scripts/ folder
-- ✅ Setup git hooks in .husky/ folder
-- ✅ Add GitHub Actions workflows to .github/workflows/
-- ✅ Create necessary directories (reports/, etc.)
-
-### Option 2: Manual Integration
-
-1. **Copy Files**: Copy all files from this folder to your project
-2. **Merge package.json**: Add the devDependencies and scripts to your existing package.json
-3. **Update Scripts**: Modify the source directory if different from `src/`
-4. **Configure**: Adjust `.eslintrc`, `.jscpd.json`, and other configs as needed
-
-### 3. Basic Usage
+### Python Projects
 
 ```bash
-# Run all quality checks
-make quality
+# Complete quality analysis
+python python-quality-check.py all
 
-# Run with auto-fix
-make quality-fix
+# With auto-fix
+python python-quality-check.py all --fix
 
-# Run specific checks
-make lint
-make format
-make security-check
-make complexity
+# Specific categories
+python python-quality-check.py formatting --fix
+python python-quality-check.py security
+python python-quality-check.py analysis
 ```
 
-## 📦 What's Included
-
-### Core Scripts
-
-- **`scripts/quality-check.js`** - Main runner for all quality tools
-- **`scripts/maintainability-check.js`** - Maintainability analysis with scoring
-- **`scripts/duplication-check.js`** - Code duplication detection
-- **`scripts/setup-hooks.js`** - Development environment setup
-
-### Configuration Files
-
-- **`configs/.lintstagedrc.js`** - Lint-staged configuration for git hooks
-- **`configs/.jscpd.json`** - jscpd duplication detection settings
-- **`configs/.eslintrc.example.js`** - Example ESLint configuration with all quality rules
-
-### Git Hooks Templates
-
-- **`hooks/pre-commit`** - Pre-commit hook for staged files validation
-- **`hooks/pre-push`** - Pre-push hook for comprehensive quality checks
-- **`hooks/commit-msg`** - Commit message format validation
-
-### Templates
-
-- **`package-template.json`** - Template package.json with all required dependencies
-- **`Makefile-template`** - Template Makefile with development commands
-- **`setup.js`** - Automatic setup script for easy integration
-
-### CI/CD Workflows
-
-- **`workflows/quality-checks.yml`** - GitHub Actions for continuous quality checks
-- **`workflows/pre-merge.yml`** - Comprehensive pre-merge validation workflow
-
-## 🛠️ Available Commands
-
-### NPM Scripts
+### Mixed Language Projects
 
 ```bash
-# Quality checks
-npm run quality          # Run all quality checks
-npm run quality:fix      # Run all quality checks with auto-fix
-npm run quality:fast     # Run essential quality checks only
-npm run quality:security # Run security analysis only
+# Run quality checks for all languages
+./run-all-quality-checks.sh
 
-# Individual tools
-npm run format          # Format code with Prettier
-npm run lint           # Run ESLint
-npm run type-check     # TypeScript type checking
-npm run dead-code      # Find dead code with ts-prune
-npm run complexity     # Analyze code complexity
-npm run security       # Security analysis
-npm run maintainability # Maintainability analysis
-npm run duplication    # Code duplication check
-
-# Git hooks
-npm run pre-commit     # Run pre-commit checks
-npm run setup-hooks    # Setup git hooks and environment
-```
-
-### Make Commands
-
-```bash
-# Development
-make install          # Install dependencies and setup
-make quality          # Run all quality checks
-make quality-fix      # Run quality checks with auto-fix
-make quality-fast     # Run essential checks only
-
-# Individual checks
-make lint            # Run linting
-make format          # Format code
-make type-check      # Type checking
-make security-check  # Security analysis
-make dead-code      # Dead code detection
-make complexity     # Complexity analysis
-make dependencies   # Dependency analysis
-```
-
-### Node.js Direct
-
-```bash
-# Run quality checks directly
-node scripts/quality-check.js all
-node scripts/quality-check.js all --fix
-node scripts/quality-check.js formatting --fix
-node scripts/quality-check.js linting
-node scripts/quality-check.js security
-
-# Run maintainability analysis
-node scripts/maintainability-check.js
-
-# Run duplication check
-node scripts/duplication-check.js
-
-# Setup environment
-node scripts/setup-hooks.js
+# Language-specific with custom directories
+node scripts/quality-check.cjs all --source-dir="frontend/src"
+python python-quality-check.py all --source-dir="backend/src"
 ```
 
 ## ⚙️ Configuration
 
-### Source Directory
-
-By default, the system analyzes the `src/` directory. To change this, you can:
-
-1. **For quality-check.js**: Use the `--source-dir` flag:
-
-   ```bash
-   node scripts/quality-check.js all --source-dir="lib/"
-   ```
-
-2. **For other scripts**: Edit the scripts and update the source directory path
-
-3. **For package.json scripts**: Update the scripts to include the source directory:
-   ```json
-   {
-     "scripts": {
-       "lint": "eslint --ext .ts,.tsx,.js,.jsx lib/"
-     }
-   }
-   ```
-
-### Project Name
-
-The maintainability script can be configured with your project name:
-
-```bash
-node scripts/maintainability-check.js --project-name="My Project"
-```
-
-### ESLint Configuration
-
-Create or update `.eslintrc.js`:
-
-```javascript
-module.exports = {
-  extends: [
-    'next/core-web-vitals', // For Next.js projects
-    // or other base configs
-  ],
-  plugins: ['security', 'sonarjs', 'unused-imports'],
-  rules: {
-    // Complexity rules
-    complexity: ['warn', 10],
-    'max-depth': ['warn', 4],
-    'max-lines': ['warn', 300],
-    'max-lines-per-function': ['warn', 50],
-    'max-params': ['warn', 4],
-    'max-statements': ['warn', 20],
-
-    // Security rules
-    'security/detect-object-injection': 'error',
-
-    // SonarJS rules
-    'sonarjs/cognitive-complexity': ['error', 15],
-    'sonarjs/no-duplicate-string': 'error',
-
-    // Import rules
-    'unused-imports/no-unused-imports': 'error',
-  },
-};
-```
-
-### Prettier Configuration
-
-Create `.prettierrc`:
+### Project Configuration (`.adlimen-config.json`)
 
 ```json
 {
-  "semi": true,
-  "trailingComma": "es5",
-  "singleQuote": true,
-  "printWidth": 80,
-  "tabWidth": 2
-}
-```
-
-## 🔧 Integration Examples
-
-### For React/Next.js Projects
-
-```json
-{
-  "devDependencies": {
-    // Copy from package-template.json
-  },
-  "scripts": {
-    // Add scripts from package-template.json
-    "quality": "node scripts/quality-check.js all",
-    "pre-commit": "npx lint-staged"
+  "adlimen": {
+    "version": "1.0.0",
+    "languages": ["javascript", "python"],
+    "structure": {
+      "type": "monorepo",
+      "frontendDir": "frontend/src",
+      "backendDir": "backend/src",
+      "packagesDir": "packages",
+      "isMonorepo": true
+    },
+    "interface": "both",
+    "thresholds": {
+      "complexity": 10,
+      "maintainability": 70,
+      "duplication": 5
+    },
+    "features": {
+      "security": true,
+      "gitHooks": true,
+      "ciProvider": "github"
+    }
   }
 }
 ```
 
-### For Node.js/Express Projects
+### Monorepo Support
+
+The installer automatically detects monorepo structures and provides:
+- **Unified quality standards** across packages
+- **Centralized configuration** and tooling
+- **Consistent git hooks** for all packages
+- **Cross-package dependency analysis**
+
+## 🔧 Project Structure Examples
+
+### Full-Stack Project
 
 ```bash
-# Update source directory in scripts
-node scripts/quality-check.js all --source-dir="src/"
-
-# or for different structure
-node scripts/quality-check.js all --source-dir="lib/"
+my-fullstack-app/
+├── frontend/                    # React/Next.js frontend
+├── backend/                     # Python API backend
+├── .adlimen-code-quality-suite/ # Quality suite configuration
+├── .adlimen-config.json         # Project configuration
+└── package.json                 # Root scripts
 ```
 
-### For Vue.js Projects
+### Monorepo Structure
 
-Update `.lintstagedrc.js`:
-
-```javascript
-module.exports = {
-  '**/*.{ts,js,vue}': [
-    'prettier --write',
-    'eslint --fix',
-    'npm run type-check',
-  ],
-  // ... other patterns
-};
+```bash
+monorepo/
+├── packages/
+│   ├── web-app/          # React TypeScript
+│   ├── mobile-app/       # React Native TypeScript
+│   ├── api-gateway/      # Node.js TypeScript
+│   ├── user-service/     # Python
+│   └── data-service/     # Python
+└── tools/
+    └── quality-suite/
 ```
 
 ## 📊 Quality Metrics
 
-### Maintainability Score
-
-The maintainability check provides a score from 0-100 based on:
-
-- Code complexity (cyclomatic complexity)
-- Function length
-- File length
-- Nesting depth
-- Parameter count
-- Statement count
-
-**Scoring:**
-
+### Maintainability Score (0-100)
 - **90-100**: Excellent maintainability
 - **80-89**: Good maintainability
 - **70-79**: Acceptable maintainability
 - **60-69**: Needs improvement
 - **Below 60**: Requires refactoring
 
-### Duplication Threshold
-
-The duplication check flags code blocks with:
-
-- Minimum 10 lines
-- Minimum 70 tokens
-- Configurable threshold (default: 10%)
+### Duplication Thresholds
+- **Minimum lines**: 5-10 (configurable)
+- **Minimum tokens**: 50-70 (configurable)
+- **Maximum percentage**: 5-10% (configurable)
 
 ### Security Analysis
-
-Includes checks for:
-
-- Known vulnerabilities (npm audit)
-- Security anti-patterns (ESLint security)
-- Code complexity issues (SonarJS)
+- Known vulnerabilities detection
+- Security anti-patterns identification
+- Code complexity security issues
 
 ## 🚀 CI/CD Integration
 
 ### GitHub Actions
 
-Copy the workflow files to `.github/workflows/`:
-
-- `quality-checks.yml` - Runs on every push/PR
-- `pre-merge.yml` - Comprehensive checks before merging
+```yaml
+name: AdLimen Quality Checks
+on: [push, pull_request]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - name: Install dependencies
+      run: npm ci
+    - name: Run Quality Checks
+      run: node scripts/adlimen/quality-check.cjs all
+```
 
 ### Other CI Systems
-
-The scripts can be integrated with any CI system:
 
 ```bash
 # Basic CI pipeline
 npm ci
-npm run quality
+npm run adlimen:quality
 npm run test
 npm run build
 ```
 
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **"Command not found" errors**
-
-   ```bash
-   # Ensure all dependencies are installed
-   npm install
-
-   # Check if tools are available
-   npx eslint --version
-   npx prettier --version
-   ```
-
-2. **Git hooks not running**
-
-   ```bash
-   # Reinstall hooks
-   npm run setup-hooks
-
-   # Check hook files are executable
-   chmod +x .husky/pre-commit
-   chmod +x .husky/pre-push
-   ```
-
-3. **TypeScript errors**
-
-   ```bash
-   # Ensure TypeScript is configured
-   npx tsc --init
-
-   # Check tsconfig.json is properly configured
-   npm run type-check
-   ```
-
-4. **ESLint configuration conflicts**
-   - Check for multiple ESLint config files
-   - Ensure the config extends the right base configurations
-   - Verify plugin dependencies are installed
-
-### Performance Issues
-
-For large codebases:
-
-1. **Exclude directories** in `.jscpd.json`:
-
-   ```json
-   {
-     "ignore": ["node_modules/**", "dist/**", "coverage/**"]
-   }
-   ```
-
-2. **Run checks in parallel**:
-
-   ```bash
-   # Use --quiet flag for faster execution
-   node scripts/quality-check.js all --quiet
-   ```
-
-3. **Limit scope** for development:
-   ```bash
-   # Check only changed files
-   npm run pre-commit
-   ```
-
 ## 📚 Best Practices
 
 ### Development Workflow
+1. **Setup**: Run interactive installer after cloning
+2. **Development**: Let pre-commit hooks catch issues early  
+3. **Before PR**: Run complete quality check
+4. **CI/CD**: Automate with provided workflows
 
-1. **Setup**: Run `npm run setup-hooks` after cloning
-2. **Development**: Let pre-commit hooks catch issues early
-3. **Before PR**: Run `npm run quality` for full check
-4. **CI/CD**: Automate with GitHub Actions or similar
-
-### Code Quality Standards
-
+### Quality Standards
 - **Complexity**: Keep cyclomatic complexity under 10
 - **Function length**: Maximum 50 lines per function
 - **File length**: Maximum 300 lines per file
 - **Duplication**: Keep below 10% duplication threshold
 - **Security**: Address all security warnings
 
-### Maintenance
+## 🔍 Troubleshooting
 
-- **Update dependencies** regularly: `npm update`
-- **Review quality reports** weekly
-- **Adjust thresholds** based on project needs
-- **Monitor CI/CD** pipeline performance
+### Common Issues
+
+**"Command not found" errors:**
+```bash
+npm install  # Ensure dependencies are installed
+npx eslint --version  # Check tool availability
+```
+
+**Git hooks not running:**
+```bash
+npm run setup-hooks  # Reinstall hooks
+chmod +x .husky/pre-commit  # Check permissions
+```
+
+**Performance issues:**
+```bash
+node scripts/quality-check.js all --quiet  # Use quiet mode
+npm run pre-commit  # Check only changed files
+```
 
 ## 🤝 Contributing
 
 To improve this quality system:
-
 1. Test with different project types
 2. Add new quality tools as needed
 3. Improve configuration templates
@@ -465,116 +298,21 @@ To improve this quality system:
 
 ## 📄 License
 
-This quality system is extracted from the Nutry project and is provided as-is for reuse in other projects.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🔗 Related Tools
+Copyright (c) 2025 Matteo Cervelli - Ad Limen S.r.l.
 
-- [ESLint](https://eslint.org/) - Linting
-- [Prettier](https://prettier.io/) - Code formatting
-- [Husky](https://typicode.github.io/husky/) - Git hooks
-- [lint-staged](https://github.com/okonet/lint-staged) - Run linters on staged files
-- [jscpd](https://github.com/kucherenko/jscpd) - Code duplication detection
-- [ts-prune](https://github.com/nadeesha/ts-prune) - Dead code detection
-- [dependency-cruiser](https://github.com/sverweij/dependency-cruiser) - Dependency analysis
+## ☕ Support the Project
 
-## 🌟 About AdLimen Code Quality Suite Family
+If you find this quality system valuable for your projects, consider supporting its development:
 
-This comprehensive quality system is designed with a modular architecture to easily support multiple programming languages. The system is structured to accommodate current and future language editions:
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Development-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/matteocervelli)
 
-```
-adlimen-code-quality-suite/
-├── 📁 editions/
-│   ├── javascript/           # JS/TS tools, configs, hooks, workflows
-│   ├── python/              # Python 11-step workflow (Enhanced!)
-│   ├── [go]/                # Future: Go quality tools
-│   └── [any-language]/      # Future: Any language edition
-├── 🚀 setup.js              # Multi-language setup orchestrator
-├── 📄 README.md             # Integration documentation
-└── 📄 LANGUAGE-INTEGRATION-GUIDE.md # Detailed integration guide
-```
-
-## 🔧 Adding New Language Editions
-
-### Architecture for Language Integration
-
-Each language edition follows this standardized structure:
-
-```
-editions/[language-name]/
-├── scripts/                 # Language-specific quality runners
-├── configs/                 # Configuration templates  
-├── package.template.*       # Dependencies (requirements.txt, Gemfile, etc.)
-└── README.md                # Language-specific documentation
-```
-
-### Integration Process
-
-1. **Create Edition Directory**: `editions/your-language/`
-2. **Add Quality Scripts**: Language-specific runners
-3. **Configure Templates**: Linting, formatting, security configs
-4. **Update Setup**: Modify `setup.js` for auto-detection
-5. **Document Usage**: Create comprehensive README
-
-### Example Integration Pattern
-
-For any new language, follow this pattern:
-
-```bash
-# 1. Create structure
-mkdir -p editions/python/{scripts,configs}
-
-# 2. Add detection logic to setup.js
-# 3. Create quality runner scripts
-# 4. Add configuration templates
-# 5. Test integration
-```
-
-**Supported integrations**: Any language with CLI quality tools can be integrated following this modular pattern.
-
-📖 **For detailed integration instructions, see [LANGUAGE-INTEGRATION-GUIDE.md](./LANGUAGE-INTEGRATION-GUIDE.md)**
-
-🔧 **For JavaScript/TypeScript usage, see [editions/javascript/README.md](./editions/javascript/README.md)**
-
-🐍 **For Python usage, see [editions/python/README.md](./editions/python/README.md)**
-
-## 📞 Support
-
-For issues, questions, or contributions to the Complete Quality Suite:
-
-1. **Documentation**: Check the comprehensive README and guides
-2. **Issues**: Report bugs or request features
-3. **Contributions**: Submit pull requests following the contribution guidelines
-4. **Community**: Join discussions about quality practices
-
-## 🎯 Quick Integration Example
-
-For a typical Next.js project:
-
-```bash
-# 1. Copy Complete Quality Suite to your project
-cp -r complete-quality-suite /path/to/your/nextjs-project/
-
-# 2. Navigate and setup
-cd /path/to/your/nextjs-project/complete-quality-suite
-node setup.js
-
-# 3. Install dependencies
-cd ..
-npm install
-
-# 4. Run first quality check
-npm run quality
-
-# 5. Setup git hooks
-npm run setup-hooks
-
-# 6. You're ready to go!
-git add .
-git commit -m "feat: integrate Complete Quality Suite"
-```
+Your support helps maintain and improve this open-source quality system for the entire development community.
 
 ---
 
-**Last updated**: 2025-07-09  
 **Version**: 1.0.0  
-**Edition**: JavaScript/TypeScript
+**Editions**: JavaScript/TypeScript + Python (Multi-Language Support)  
+**Architecture**: 11-Step Modular Quality Workflow  
+**Last updated**: 2025-07-10

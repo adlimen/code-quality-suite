@@ -155,3 +155,6 @@ local.config.js
 test-install/
 example-integration/
 temp-setup/
+
+# Claude
+CLAUDE.md

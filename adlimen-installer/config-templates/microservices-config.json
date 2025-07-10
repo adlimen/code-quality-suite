@@ -1,0 +1,173 @@
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "installedDate": "2025-07-10T12:00:00Z",
+    "projectRoot": "/path/to/project",
+    "projectType": "microservices",
+    "languages": ["javascript", "python"],
+    "frameworks": ["express", "fastapi", "flask"],
+    "structure": {
+      "microservices": true,
+      "services": {
+        "api-gateway": {
+          "language": "javascript",
+          "path": "services/api-gateway/src",
+          "framework": "express",
+          "port": 3000
+        },
+        "user-service": {
+          "language": "python",
+          "path": "services/user-service/src",
+          "framework": "fastapi",
+          "port": 8001
+        },
+        "payment-service": {
+          "language": "python",
+          "path": "services/payment-service/src",
+          "framework": "flask",
+          "port": 8002
+        },
+        "notification-service": {
+          "language": "javascript",
+          "path": "services/notification-service/src",
+          "framework": "express",
+          "port": 3003
+        },
+        "auth-service": {
+          "language": "javascript",
+          "path": "services/auth-service/src",
+          "framework": "express",
+          "port": 3001
+        }
+      },
+      "shared": {
+        "commonDir": "shared/src",
+        "libsDir": "libs/src",
+        "protosDir": "protos",
+        "configsDir": "configs"
+      }
+    },
+    "interface": "both",
+    "thresholds": {
+      "global": {
+        "complexity": 8,
+        "maintainability": 75,
+        "duplication": 4,
+        "coverage": 85
+      },
+      "javascript": {
+        "complexity": 10,
+        "maintainability": 70,
+        "duplication": 5,
+        "coverage": 80
+      },
+      "python": {
+        "complexity": 8,
+        "maintainability": 75,
+        "duplication": 3,
+        "coverage": 90
+      },
+      "serviceOverrides": {
+        "api-gateway": {
+          "complexity": 12,
+          "coverage": 85
+        },
+        "payment-service": {
+          "complexity": 6,
+          "coverage": 95,
+          "security": "strict"
+        }
+      }
+    },
+    "features": {
+      "security": {
+        "enabled": true,
+        "level": "strict",
+        "sast": true,
+        "dependencyScanning": true,
+        "secretsScanning": true,
+        "containerScanning": true
+      },
+      "gitHooks": true,
+      "autoFix": true,
+      "parallelExecution": true,
+      "serviceIsolation": true,
+      "crossServiceAnalysis": true,
+      "ciProvider": "github",
+      "reporting": {
+        "format": ["json", "html", "junit"],
+        "destination": "reports/",
+        "upload": true,
+        "consolidate": true,
+        "perService": true
+      },
+      "containerization": {
+        "enabled": true,
+        "qualityInContainers": true,
+        "multistageBuilds": true
+      }
+    },
+    "paths": {
+      "configFile": ".adlimen-config.json",
+      "qualitySuiteDir": ".adlimen-code-quality-suite",
+      "scriptsDir": ".adlimen-code-quality-suite/scripts",
+      "reportsDir": "reports",
+      "eslintConfigsDir": ".eslint-configs",
+      "serviceConfigsDir": ".adlimen-service-configs",
+      "sharedConfigsDir": "shared/.adlimen-configs"
+    },
+    "customRules": {
+      "javascript": {
+        "shared": {
+          "complexity": ["error", { "max": 10 }],
+          "max-depth": ["error", 4],
+          "max-lines-per-function": ["error", 50],
+          "no-console": "warn"
+        },
+        "serviceOverrides": {
+          "api-gateway": {
+            "no-console": "error",
+            "prefer-const": "error"
+          },
+          "auth-service": {
+            "security/detect-object-injection": "error"
+          }
+        }
+      },
+      "python": {
+        "shared": {
+          "max-line-length": 88,
+          "max-complexity": 8,
+          "max-function-length": 50
+        },
+        "serviceOverrides": {
+          "payment-service": {
+            "max-complexity": 6,
+            "bandit-strict": true
+          }
+        }
+      }
+    },
+    "microservices": {
+      "orchestration": "docker-compose",
+      "communication": "rest",
+      "monitoring": {
+        "healthChecks": true,
+        "metrics": true,
+        "tracing": true
+      },
+      "testing": {
+        "unitTests": true,
+        "integrationTests": true,
+        "contractTests": true,
+        "e2eTests": true
+      }
+    },
+    "ci": {
+      "strategy": "matrix",
+      "parallelJobs": 5,
+      "dependencyStrategy": "optimal",
+      "deploymentGates": true
+    }
+  }
+}

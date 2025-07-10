@@ -2,42 +2,128 @@
   "adlimen": {
     "version": "1.0.0",
     "installedDate": "2025-07-10T12:00:00Z",
-    "projectRoot": "/path/to/monorepo",
+    "projectRoot": "/path/to/project",
+    "projectType": "monorepo",
     "languages": ["javascript", "python"],
+    "frameworks": ["react", "express", "flask"],
     "structure": {
-      "frontendDir": "packages/frontend",
-      "backendDir": "packages/backend"
+      "monorepo": true,
+      "workspaces": true,
+      "packages": {
+        "web-app": {
+          "language": "javascript",
+          "path": "packages/web-app/src",
+          "framework": "react"
+        },
+        "mobile-app": {
+          "language": "javascript", 
+          "path": "packages/mobile-app/src",
+          "framework": "react-native"
+        },
+        "api-gateway": {
+          "language": "javascript",
+          "path": "packages/api-gateway/src",
+          "framework": "express"
+        },
+        "user-service": {
+          "language": "python",
+          "path": "packages/user-service/src",
+          "framework": "flask"
+        },
+        "data-pipeline": {
+          "language": "python",
+          "path": "packages/data-pipeline/src",
+          "framework": "airflow"
+        }
+      }
     },
     "interface": "both",
     "thresholds": {
-      "complexity": 8,
-      "maintainability": 75,
-      "duplication": 3
-    },
-    "features": {
-      "security": true,
-      "gitHooks": true,
-      "ciProvider": "github"
-    },
-    "paths": {
-      "configFile": ".adlimen.config.json",
-      "scriptsDir": "scripts/adlimen",
-      "reportsDir": "reports",
-      "eslintConfigsDir": ".eslint-configs"
-    },
-    "environments": {
-      "development": {
-        "thresholds": {
-          "complexity": 12,
-          "maintainability": 65
-        }
+      "default": {
+        "complexity": 10,
+        "maintainability": 70,
+        "duplication": 5,
+        "coverage": 80
       },
-      "production": {
-        "thresholds": {
-          "complexity": 6,
-          "maintainability": 85
+      "javascript": {
+        "complexity": 10,
+        "maintainability": 70,
+        "duplication": 5,
+        "coverage": 80
+      },
+      "python": {
+        "complexity": 8,
+        "maintainability": 75,
+        "duplication": 3,
+        "coverage": 85
+      },
+      "overrides": {
+        "data-pipeline": {
+          "complexity": 12,
+          "duplication": 8
         }
       }
+    },
+    "features": {
+      "security": {
+        "enabled": true,
+        "level": "standard",
+        "sast": true,
+        "dependencyScanning": true
+      },
+      "gitHooks": true,
+      "autoFix": true,
+      "parallelExecution": true,
+      "workspaceIsolation": true,
+      "ciProvider": "github",
+      "reporting": {
+        "format": ["json", "html"],
+        "destination": "reports/",
+        "upload": false,
+        "consolidate": true
+      }
+    },
+    "paths": {
+      "configFile": ".adlimen-config.json",
+      "qualitySuiteDir": ".adlimen-code-quality-suite",
+      "scriptsDir": ".adlimen-code-quality-suite/scripts",
+      "reportsDir": "reports",
+      "eslintConfigsDir": ".eslint-configs",
+      "workspaceConfigDir": ".adlimen-workspace-configs"
+    },
+    "customRules": {
+      "javascript": {
+        "shared": {
+          "complexity": ["error", { "max": 10 }],
+          "max-depth": ["error", 4],
+          "max-lines-per-function": ["error", 50]
+        },
+        "overrides": {
+          "web-app": {
+            "react-hooks/exhaustive-deps": "warn"
+          },
+          "api-gateway": {
+            "no-console": "error"
+          }
+        }
+      },
+      "python": {
+        "shared": {
+          "max-line-length": 88,
+          "max-complexity": 8
+        },
+        "overrides": {
+          "data-pipeline": {
+            "max-complexity": 12
+          }
+        }
+      }
+    },
+    "workspace": {
+      "packageManager": "npm",
+      "hoistDependencies": true,
+      "sharedConfigs": true,
+      "crossPackageAnalysis": true
     }
   }
 }

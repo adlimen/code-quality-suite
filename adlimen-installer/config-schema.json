@@ -1,0 +1,815 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://adlimen.com/schemas/code-quality-config.json",
+  "title": "AdLimen Code Quality Suite Configuration",
+  "description": "Configuration schema for the AdLimen Code Quality Suite",
+  "type": "object",
+  "required": ["adlimen"],
+  "properties": {
+    "adlimen": {
+      "type": "object",
+      "required": ["version", "languages"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of the AdLimen configuration format"
+        },
+        "installedDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of when the system was installed"
+        },
+        "projectRoot": {
+          "type": "string",
+          "description": "Absolute path to the project root directory"
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Name of the project"
+        },
+        "projectType": {
+          "type": "string",
+          "enum": ["basic", "fullstack", "monorepo", "microservices", "frontend-only", "backend-only"],
+          "description": "Type of project structure"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["javascript", "python", "go", "rust", "java", "csharp"]
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Programming languages used in the project"
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["react", "vue", "angular", "next", "express", "koa", "flask", "django", "fastapi", "spring", "dotnet"]
+          },
+          "uniqueItems": true,
+          "description": "Frameworks used in the project"
+        },
+        "structure": {
+          "type": "object",
+          "properties": {
+            "frontendDir": {
+              "type": "string",
+              "description": "Path to frontend source directory"
+            },
+            "backendDir": {
+              "type": "string",
+              "description": "Path to backend source directory"
+            },
+            "sharedDir": {
+              "type": "string",
+              "description": "Path to shared code directory"
+            },
+            "monorepo": {
+              "type": "boolean",
+              "description": "Whether this is a monorepo structure"
+            },
+            "microservices": {
+              "type": "boolean",
+              "description": "Whether this is a microservices architecture"
+            },
+            "workspaces": {
+              "type": "boolean",
+              "description": "Whether workspaces are used"
+            },
+            "packages": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/packageConfig"
+              },
+              "description": "Package configurations for monorepo"
+            },
+            "services": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/serviceConfig"
+              },
+              "description": "Service configurations for microservices"
+            }
+          }
+        },
+        "interface": {
+          "type": "string",
+          "enum": ["npm", "make", "both"],
+          "description": "Preferred command interface"
+        },
+        "thresholds": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/simpleThresholds"
+            },
+            {
+              "$ref": "#/definitions/languageSpecificThresholds"
+            }
+          ],
+          "description": "Quality threshold configurations"
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "security": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "#/definitions/securityConfig"
+                }
+              ],
+              "description": "Security scanning configuration"
+            },
+            "gitHooks": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "#/definitions/gitHooksConfig"
+                }
+              ],
+              "description": "Git hooks configuration"
+            },
+            "autoFix": {
+              "type": "boolean",
+              "description": "Enable automatic fixing of issues"
+            },
+            "parallelExecution": {
+              "type": "boolean",
+              "description": "Enable parallel execution of quality checks"
+            },
+            "serviceIsolation": {
+              "type": "boolean",
+              "description": "Enable service isolation for microservices"
+            },
+            "workspaceIsolation": {
+              "type": "boolean",
+              "description": "Enable workspace isolation for monorepos"
+            },
+            "crossServiceAnalysis": {
+              "type": "boolean",
+              "description": "Enable cross-service analysis"
+            },
+            "bundleAnalysis": {
+              "type": "boolean",
+              "description": "Enable bundle analysis for frontend projects"
+            },
+            "performanceAnalysis": {
+              "type": "boolean",
+              "description": "Enable performance analysis"
+            },
+            "accessibilityChecks": {
+              "type": "boolean",
+              "description": "Enable accessibility checks"
+            },
+            "apiDocumentation": {
+              "type": "boolean",
+              "description": "Enable API documentation generation"
+            },
+            "ciProvider": {
+              "type": "string",
+              "enum": ["", "github", "gitlab", "circleci", "jenkins", "azure"],
+              "description": "CI/CD provider integration"
+            },
+            "reporting": {
+              "$ref": "#/definitions/reportingConfig",
+              "description": "Reporting configuration"
+            },
+            "containerization": {
+              "$ref": "#/definitions/containerConfig",
+              "description": "Container-related features"
+            },
+            "notifications": {
+              "$ref": "#/definitions/notificationConfig",
+              "description": "Notification configuration"
+            }
+          }
+        },
+        "paths": {
+          "type": "object",
+          "properties": {
+            "configFile": {
+              "type": "string",
+              "description": "Path to the main configuration file"
+            },
+            "qualitySuiteDir": {
+              "type": "string",
+              "description": "Directory for quality suite files"
+            },
+            "scriptsDir": {
+              "type": "string",
+              "description": "Directory for quality scripts"
+            },
+            "reportsDir": {
+              "type": "string",
+              "description": "Directory for quality reports"
+            },
+            "eslintConfigsDir": {
+              "type": "string",
+              "description": "Directory for ESLint configurations"
+            },
+            "serviceConfigsDir": {
+              "type": "string",
+              "description": "Directory for service-specific configurations"
+            },
+            "workspaceConfigDir": {
+              "type": "string",
+              "description": "Directory for workspace configurations"
+            },
+            "sharedConfigsDir": {
+              "type": "string",
+              "description": "Directory for shared configurations"
+            },
+            "pythonConfigFile": {
+              "type": "string",
+              "description": "Path to Python configuration file (pyproject.toml)"
+            }
+          }
+        },
+        "customRules": {
+          "type": "object",
+          "properties": {
+            "javascript": {
+              "$ref": "#/definitions/javascriptRules"
+            },
+            "python": {
+              "$ref": "#/definitions/pythonRules"
+            }
+          },
+          "additionalProperties": {
+            "type": "object"
+          },
+          "description": "Custom rules for each language"
+        },
+        "workspace": {
+          "$ref": "#/definitions/workspaceConfig",
+          "description": "Workspace-specific configuration"
+        },
+        "microservices": {
+          "$ref": "#/definitions/microservicesConfig",
+          "description": "Microservices-specific configuration"
+        },
+        "frontend": {
+          "$ref": "#/definitions/frontendConfig",
+          "description": "Frontend-specific configuration"
+        },
+        "backend": {
+          "$ref": "#/definitions/backendConfig",
+          "description": "Backend-specific configuration"
+        },
+        "ci": {
+          "$ref": "#/definitions/ciConfig",
+          "description": "CI/CD configuration"
+        },
+        "performance": {
+          "$ref": "#/definitions/performanceConfig",
+          "description": "Performance optimization settings"
+        },
+        "development": {
+          "$ref": "#/definitions/developmentConfig",
+          "description": "Development-specific settings"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "packageConfig": {
+      "type": "object",
+      "required": ["language", "path"],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": ["javascript", "python", "go", "rust", "java"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "framework": {
+          "type": "string"
+        }
+      }
+    },
+    "serviceConfig": {
+      "type": "object",
+      "required": ["language", "path"],
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": ["javascript", "python", "go", "rust", "java"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "framework": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "simpleThresholds": {
+      "type": "object",
+      "properties": {
+        "complexity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "maintainability": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "duplication": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50
+        },
+        "coverage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "languageSpecificThresholds": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "$ref": "#/definitions/simpleThresholds"
+        },
+        "javascript": {
+          "$ref": "#/definitions/simpleThresholds"
+        },
+        "python": {
+          "$ref": "#/definitions/simpleThresholds"
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/simpleThresholds"
+          }
+        },
+        "serviceOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "allOf": [
+              {
+                "$ref": "#/definitions/simpleThresholds"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "security": {
+                    "type": "string",
+                    "enum": ["standard", "strict"]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "securityConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "level": {
+          "type": "string",
+          "enum": ["standard", "strict"]
+        },
+        "sast": {
+          "type": "boolean"
+        },
+        "dependencyScanning": {
+          "type": "boolean"
+        },
+        "secretsScanning": {
+          "type": "boolean"
+        },
+        "containerScanning": {
+          "type": "boolean"
+        }
+      }
+    },
+    "gitHooksConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "preCommit": {
+          "type": "boolean"
+        },
+        "prePush": {
+          "type": "boolean"
+        },
+        "commitMsg": {
+          "type": "boolean"
+        }
+      }
+    },
+    "reportingConfig": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["json", "html", "junit", "xml"]
+          },
+          "uniqueItems": true
+        },
+        "destination": {
+          "type": "string"
+        },
+        "upload": {
+          "type": "boolean"
+        },
+        "consolidate": {
+          "type": "boolean"
+        },
+        "perService": {
+          "type": "boolean"
+        }
+      }
+    },
+    "containerConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "qualityInContainers": {
+          "type": "boolean"
+        },
+        "multistageBuilds": {
+          "type": "boolean"
+        }
+      }
+    },
+    "notificationConfig": {
+      "type": "object",
+      "properties": {
+        "slack": {
+          "type": "object",
+          "properties": {
+            "webhook": {
+              "type": "string",
+              "format": "uri"
+            },
+            "channel": {
+              "type": "string"
+            }
+          }
+        },
+        "email": {
+          "type": "object",
+          "properties": {
+            "recipients": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          }
+        }
+      }
+    },
+    "javascriptRules": {
+      "type": "object",
+      "properties": {
+        "shared": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "serviceOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "pythonRules": {
+      "type": "object",
+      "properties": {
+        "shared": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "serviceOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "workspaceConfig": {
+      "type": "object",
+      "properties": {
+        "packageManager": {
+          "type": "string",
+          "enum": ["npm", "yarn", "pnpm"]
+        },
+        "hoistDependencies": {
+          "type": "boolean"
+        },
+        "sharedConfigs": {
+          "type": "boolean"
+        },
+        "crossPackageAnalysis": {
+          "type": "boolean"
+        }
+      }
+    },
+    "microservicesConfig": {
+      "type": "object",
+      "properties": {
+        "orchestration": {
+          "type": "string",
+          "enum": ["docker-compose", "kubernetes", "swarm"]
+        },
+        "communication": {
+          "type": "string",
+          "enum": ["rest", "grpc", "graphql", "messaging"]
+        },
+        "monitoring": {
+          "type": "object",
+          "properties": {
+            "healthChecks": {
+              "type": "boolean"
+            },
+            "metrics": {
+              "type": "boolean"
+            },
+            "tracing": {
+              "type": "boolean"
+            }
+          }
+        },
+        "testing": {
+          "type": "object",
+          "properties": {
+            "unitTests": {
+              "type": "boolean"
+            },
+            "integrationTests": {
+              "type": "boolean"
+            },
+            "contractTests": {
+              "type": "boolean"
+            },
+            "e2eTests": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "frontendConfig": {
+      "type": "object",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "enum": ["react", "vue", "angular", "svelte"]
+        },
+        "bundler": {
+          "type": "string",
+          "enum": ["webpack", "vite", "rollup", "parcel"]
+        },
+        "typescript": {
+          "type": "boolean"
+        },
+        "testing": {
+          "type": "object",
+          "properties": {
+            "framework": {
+              "type": "string",
+              "enum": ["jest", "vitest", "cypress", "playwright"]
+            },
+            "e2e": {
+              "type": "string",
+              "enum": ["cypress", "playwright", "selenium"]
+            },
+            "coverage": {
+              "type": "boolean"
+            }
+          }
+        },
+        "performance": {
+          "type": "object",
+          "properties": {
+            "bundleSize": {
+              "type": "boolean"
+            },
+            "lighthouse": {
+              "type": "boolean"
+            },
+            "coreWebVitals": {
+              "type": "boolean"
+            }
+          }
+        },
+        "accessibility": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "level": {
+              "type": "string",
+              "enum": ["A", "AA", "AAA"]
+            },
+            "automation": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "backendConfig": {
+      "type": "object",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "enum": ["express", "koa", "fastify", "flask", "django", "fastapi", "spring", "dotnet"]
+        },
+        "database": {
+          "type": "string",
+          "enum": ["postgresql", "mysql", "mongodb", "redis", "sqlite"]
+        },
+        "orm": {
+          "type": "string",
+          "enum": ["sequelize", "typeorm", "prisma", "sqlalchemy", "django-orm", "hibernate"]
+        },
+        "async": {
+          "type": "boolean"
+        },
+        "api": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["rest", "graphql", "grpc"]
+            },
+            "documentation": {
+              "type": "string",
+              "enum": ["openapi", "swagger", "graphql-schema"]
+            },
+            "validation": {
+              "type": "boolean"
+            },
+            "serialization": {
+              "type": "string"
+            }
+          }
+        },
+        "testing": {
+          "type": "object",
+          "properties": {
+            "framework": {
+              "type": "string",
+              "enum": ["jest", "mocha", "pytest", "unittest", "junit"]
+            },
+            "coverage": {
+              "type": "boolean"
+            },
+            "integration": {
+              "type": "boolean"
+            },
+            "mocking": {
+              "type": "string"
+            }
+          }
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "authentication": {
+              "type": "boolean"
+            },
+            "authorization": {
+              "type": "boolean"
+            },
+            "rateLimiting": {
+              "type": "boolean"
+            },
+            "inputValidation": {
+              "type": "boolean"
+            },
+            "sqlInjectionPrevention": {
+              "type": "boolean"
+            }
+          }
+        },
+        "monitoring": {
+          "type": "object",
+          "properties": {
+            "logging": {
+              "type": "boolean"
+            },
+            "metrics": {
+              "type": "boolean"
+            },
+            "healthChecks": {
+              "type": "boolean"
+            },
+            "errorTracking": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "ciConfig": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["matrix", "parallel", "sequential"]
+        },
+        "parallelJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "dependencyStrategy": {
+          "type": "string",
+          "enum": ["optimal", "isolated", "shared"]
+        },
+        "deploymentGates": {
+          "type": "boolean"
+        }
+      }
+    },
+    "performanceConfig": {
+      "type": "object",
+      "properties": {
+        "parallelExecution": {
+          "type": "boolean"
+        },
+        "incrementalAnalysis": {
+          "type": "boolean"
+        },
+        "excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "chunkSize": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 1000
+        },
+        "maxWorkers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        }
+      }
+    },
+    "developmentConfig": {
+      "type": "object",
+      "properties": {
+        "skipOnError": {
+          "type": "boolean"
+        },
+        "verboseOutput": {
+          "type": "boolean"
+        },
+        "progressIndicator": {
+          "type": "boolean"
+        },
+        "colorOutput": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

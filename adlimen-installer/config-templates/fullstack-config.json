@@ -1,0 +1,71 @@
+{
+  "adlimen": {
+    "version": "1.0.0",
+    "installedDate": "2025-07-10T12:00:00Z",
+    "projectRoot": "/path/to/project",
+    "projectType": "fullstack",
+    "languages": ["javascript", "python"],
+    "frameworks": ["react", "django"],
+    "structure": {
+      "frontendDir": "frontend/src",
+      "backendDir": "backend/src",
+      "sharedDir": "shared/src",
+      "monorepo": false,
+      "services": {}
+    },
+    "interface": "both",
+    "thresholds": {
+      "javascript": {
+        "complexity": 10,
+        "maintainability": 70,
+        "duplication": 5,
+        "coverage": 80
+      },
+      "python": {
+        "complexity": 8,
+        "maintainability": 75,
+        "duplication": 3,
+        "coverage": 85
+      }
+    },
+    "features": {
+      "security": {
+        "enabled": true,
+        "level": "standard",
+        "sast": true,
+        "dependencyScanning": true
+      },
+      "gitHooks": true,
+      "autoFix": true,
+      "parallelExecution": true,
+      "ciProvider": "github",
+      "reporting": {
+        "format": ["json", "html"],
+        "destination": "reports/",
+        "upload": false
+      }
+    },
+    "paths": {
+      "configFile": ".adlimen-config.json",
+      "qualitySuiteDir": ".adlimen-code-quality-suite",
+      "scriptsDir": ".adlimen-code-quality-suite/scripts",
+      "reportsDir": "reports",
+      "eslintConfigsDir": ".eslint-configs"
+    },
+    "customRules": {
+      "javascript": {
+        "overrides": {
+          "complexity": ["error", { "max": 10 }],
+          "max-depth": ["error", 4],
+          "max-lines-per-function": ["error", 50]
+        }
+      },
+      "python": {
+        "overrides": {
+          "max-line-length": 88,
+          "max-complexity": 8
+        }
+      }
+    }
+  }
+}

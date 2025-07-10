@@ -17,6 +17,7 @@ safety>=3.0.0,<4.0.0
 # Code analysis
 vulture>=2.9.0,<3.0.0
 radon>=6.0.0,<7.0.0
+pipdeptree>=2.26.0,<3.0.0  # Dependency tree analysis
 
 # Testing and coverage (optional but recommended)
 pytest>=7.4.0,<8.0.0

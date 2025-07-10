@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-Complete Quality Suite - Python Duplication Check
-Code duplication detection and analysis for Python projects
+AdLimen Code Quality Suite - Python Duplication Check
+Code duplication detection and analysis for Python projects using AST-based techniques
 """
 
+import ast
 import os
 import sys
 import subprocess
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Tuple, Any, Optional
+from collections import defaultdict
+import hashlib
 import time
 
 # Colors and formatting (reuse from main script)
@@ -131,8 +134,109 @@ def find_python_files(source_dir: str) -> List[Path]:
     
     return files
 
-def simple_duplication_check(files: List[Path]) -> Dict:
-    """Simple line-based duplication detection."""
+class DuplicationAnalyzer:
+    """Analyzes Python code for duplication using AST."""
+    
+    def __init__(self, min_lines: int = 5, min_tokens: int = 50):
+        self.min_lines = min_lines
+        self.min_tokens = min_tokens
+        self.file_contents = {}
+        self.duplicates = []
+        
+    def get_file_lines(self, file_path: str) -> List[str]:
+        """Get lines from a file, caching for performance."""
+        if file_path not in self.file_contents:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    self.file_contents[file_path] = f.readlines()
+            except Exception as e:
+                if not CONFIG.get('quiet', False):
+                    print_message(f"Could not read {file_path}: {e}", Colors.YELLOW, Emojis.WARNING)
+                self.file_contents[file_path] = []
+        return self.file_contents[file_path]
+    
+    def extract_code_blocks(self, file_path: str) -> List[Dict[str, Any]]:
+        """Extract code blocks from a Python file using AST."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            tree = ast.parse(content, filename=file_path)
+            blocks = []
+            
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    if hasattr(node, 'lineno') and hasattr(node, 'end_lineno'):
+                        start_line = node.lineno
+                        end_line = node.end_lineno or start_line
+                        
+                        if end_line - start_line + 1 >= self.min_lines:
+                            # Extract the actual code
+                            lines = self.get_file_lines(file_path)
+                            code_lines = lines[start_line-1:end_line]
+                            code = ''.join(code_lines).strip()
+                            
+                            if code:
+                                # Create a simplified AST representation for comparison
+                                try:
+                                    block_ast = ast.parse(code)
+                                    ast_dump = ast.dump(block_ast)
+                                    # Create hash of normalized AST
+                                    code_hash = hashlib.md5(ast_dump.encode()).hexdigest()
+                                    
+                                    blocks.append({
+                                        'file': file_path,
+                                        'start_line': start_line,
+                                        'end_line': end_line,
+                                        'lines': end_line - start_line + 1,
+                                        'code': code,
+                                        'hash': code_hash,
+                                        'type': type(node).__name__,
+                                        'name': getattr(node, 'name', 'anonymous')
+                                    })
+                                except:
+                                    # Fallback to string-based comparison
+                                    normalized_code = self.normalize_code(code)
+                                    code_hash = hashlib.md5(normalized_code.encode()).hexdigest()
+                                    
+                                    blocks.append({
+                                        'file': file_path,
+                                        'start_line': start_line,
+                                        'end_line': end_line,
+                                        'lines': end_line - start_line + 1,
+                                        'code': code,
+                                        'hash': code_hash,
+                                        'type': type(node).__name__,
+                                        'name': getattr(node, 'name', 'anonymous')
+                                    })
+            
+            return blocks
+            
+        except Exception as e:
+            if not CONFIG.get('quiet', False):
+                print_message(f"Could not parse {file_path}: {e}", Colors.YELLOW, Emojis.WARNING)
+            return []
+    
+    def normalize_code(self, code: str) -> str:
+        """Normalize code for comparison by removing comments and normalizing whitespace."""
+        lines = []
+        for line in code.split('\n'):
+            # Remove comments
+            if '#' in line:
+                line = line[:line.index('#')]
+            # Normalize whitespace
+            line = line.strip()
+            if line:
+                lines.append(line)
+        return '\n'.join(lines)
+
+def ast_duplication_check(files: List[Path]) -> Dict:
+    """AST-based duplication detection."""
+    analyzer = DuplicationAnalyzer(
+        min_lines=CONFIG['thresholds']['min_lines'],
+        min_tokens=CONFIG['thresholds']['min_tokens']
+    )
+    
     results = {
         'total_files': len(files),
         'total_lines': 0,
@@ -141,44 +245,45 @@ def simple_duplication_check(files: List[Path]) -> Dict:
         'percentage': 0.0,
     }
     
-    # Dictionary to store line hashes and their occurrences
-    line_occurrences = {}
-    file_lines = {}
-    
-    # Read all files and hash lines
+    # Extract code blocks from all files
+    all_blocks = []
     for file_path in files:
+        blocks = analyzer.extract_code_blocks(str(file_path))
+        all_blocks.extend(blocks)
+        
+        # Count total lines
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                file_lines[file_path] = lines
-                results['total_lines'] += len(lines)
-                
-                for line_num, line in enumerate(lines, 1):
-                    # Skip empty lines and comments for duplication check
-                    cleaned_line = line.strip()
-                    if len(cleaned_line) < 10 or cleaned_line.startswith('#'):
-                        continue
-                    
-                    line_hash = hash(cleaned_line)
-                    if line_hash not in line_occurrences:
-                        line_occurrences[line_hash] = []
-                    line_occurrences[line_hash].append((file_path, line_num, cleaned_line))
-        except (UnicodeDecodeError, PermissionError):
+                results['total_lines'] += len(f.readlines())
+        except:
             continue
     
-    # Find duplicated lines
+    # Group blocks by hash to find duplicates
+    hash_groups = defaultdict(list)
+    for block in all_blocks:
+        hash_groups[block['hash']].append(block)
+    
+    # Find duplicates and calculate statistics
     duplicated_line_count = 0
-    for line_hash, occurrences in line_occurrences.items():
-        if len(occurrences) > 1:
-            duplicated_line_count += len(occurrences)
+    for code_hash, blocks in hash_groups.items():
+        if len(blocks) > 1:
+            # Sort by file and line number for consistent reporting
+            blocks.sort(key=lambda b: (b['file'], b['start_line']))
             
-            # Group consecutive duplicated lines into blocks
-            for file_path, line_num, line_content in occurrences:
+            # Count duplicated lines (excluding the first instance)
+            lines_per_block = blocks[0]['lines']
+            duplicated_line_count += (len(blocks) - 1) * lines_per_block
+            
+            # Create block info for each duplicate
+            for block in blocks:
                 results['duplicated_blocks'].append({
-                    'file': str(file_path),
-                    'line': line_num,
-                    'content': line_content,
-                    'occurrences': len(occurrences)
+                    'file': str(block['file']),
+                    'line': block['start_line'],
+                    'content': block['code'][:200] + ('...' if len(block['code']) > 200 else ''),
+                    'occurrences': len(blocks),
+                    'type': block['type'],
+                    'name': block['name'],
+                    'lines': block['lines']
                 })
     
     results['duplicated_lines'] = duplicated_line_count
@@ -210,7 +315,7 @@ def run_duplication_analysis(options: Dict) -> bool:
     
     # Run analysis
     start_time = time.time()
-    results = simple_duplication_check(files)
+    results = ast_duplication_check(files)
     duration = int((time.time() - start_time) * 1000)
     
     # Create output directory
