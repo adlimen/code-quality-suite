@@ -21,13 +21,22 @@ The AdLimen Code Quality Suite provides a unified, multi-language code quality s
 The interactive installer uses a **global + local hybrid approach** for maximum efficiency and flexibility.
 
 ```bash
-# Step 1: Get the installer (one-time setup)
+# Option A: Download installer only (auto-downloads repository)
 curl -fsSL https://raw.githubusercontent.com/matteocervelli/code-quality-suite/main/adlimen-installer/install.sh -o install.sh
 chmod +x install.sh
-
-# Step 2: Run from your project directory
 cd /path/to/your/project
 ./install.sh
+# The installer will automatically download the full repository to ~/.adlimen/
+
+# Option B: Clone repository first (recommended for development)
+git clone https://github.com/matteocervelli/code-quality-suite.git ~/tools/code-quality-suite
+cd /path/to/your/project
+~/tools/code-quality-suite/adlimen-installer/install.sh
+
+# Option C: Global installation for convenience
+git clone https://github.com/matteocervelli/code-quality-suite.git ~/tools/code-quality-suite
+sudo ln -s ~/tools/code-quality-suite/adlimen-installer/install.sh /usr/local/bin/adlimen-install
+# Then from any project: adlimen-install
 
 # Follow the interactive prompts:
 # 1. Confirm project root directory

@@ -501,18 +501,24 @@ setup_global_system() {
         mkdir -p "$GLOBAL_ADLIMEN_DIR"
         
         # Clone the repository
+        print_message "info" "Downloading AdLimen Code Quality Suite..."
         if git clone https://github.com/matteocervelli/code-quality-suite.git "$GLOBAL_SUITE_DIR"; then
             print_message "success" "Global AdLimen system installed at $GLOBAL_SUITE_DIR"
         else
             print_message "error" "Failed to clone AdLimen repository"
             
             # Fallback: copy from current directory if we're running from the repo
-            if [ -f "../README.md" ] && [ -d "../editions" ]; then
-                print_message "info" "Using local copy as fallback..."
-                cp -r .. "$GLOBAL_SUITE_DIR"
+            local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+            local repo_root="$(dirname "$script_dir")"
+            
+            if [ -f "$repo_root/README.md" ] && [ -d "$repo_root/editions" ]; then
+                print_message "info" "Using local repository copy as fallback..."
+                cp -r "$repo_root" "$GLOBAL_SUITE_DIR"
                 print_message "success" "Global system installed from local copy"
             else
-                print_message "error" "Cannot install global system"
+                print_message "error" "Cannot install global system. Please ensure:"
+                echo "  1. Internet connection for git clone, OR"
+                echo "  2. Run installer from within the code-quality-suite repository"
                 exit 1
             fi
         fi
