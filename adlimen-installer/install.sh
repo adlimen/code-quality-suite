@@ -259,14 +259,28 @@ configure_global_system() {
 
 # Ask about project configuration
 ask_project_configuration() {
-    echo ""
-    echo -e "${YELLOW}Project Configuration:${NC}"
-    read -p "Do you want to configure a project now? (Y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
-        print_message "info" "Global system installed. You can configure projects later by running this installer again."
-        return 1
-    fi
+    while true; do
+        echo ""
+        echo -e "${YELLOW}Project Configuration:${NC}"
+        echo "1) Configure a project now"
+        echo "2) Skip project configuration" 
+        echo "3) Back to global system configuration"
+        read -p "Choice [1-3]: " project_choice
+        
+        case $project_choice in
+            1) break ;;
+            2) 
+                print_message "info" "Global system installed. You can configure projects later by running this installer again."
+                return 1 ;;
+            3) 
+                configure_global_system
+                setup_global_system
+                continue ;;
+            *) 
+                print_message "warning" "Please choose 1, 2, or 3"
+                continue ;;
+        esac
+    done
     
     # Ask for project directory
     echo ""
@@ -323,19 +337,33 @@ interactive_configuration() {
     fi
     
     # Interface preference
-    echo ""
-    echo "Choose your preferred interface:"
-    echo "1) npm scripts (recommended for Node.js teams)"
-    echo "2) Make commands (recommended for Unix/DevOps teams)"
-    echo "3) Both (dual interface)"
-    read -p "Choice [1-3]: " interface_choice
-    
-    case $interface_choice in
-        1) PREFERRED_INTERFACE="npm" ;;
-        2) PREFERRED_INTERFACE="make" ;;
-        3) PREFERRED_INTERFACE="both" ;;
-        *) PREFERRED_INTERFACE="npm" ;;
-    esac
+    while true; do
+        echo ""
+        echo "Choose your preferred interface:"
+        echo "1) npm scripts (recommended for Node.js teams)"
+        echo "2) Make commands (recommended for Unix/DevOps teams)"
+        echo "3) Both (dual interface)"
+        echo "4) Back to project directory selection"
+        read -p "Choice [1-4]: " interface_choice
+        
+        case $interface_choice in
+            1) PREFERRED_INTERFACE="npm"; break ;;
+            2) PREFERRED_INTERFACE="make"; break ;;
+            3) PREFERRED_INTERFACE="both"; break ;;
+            4) 
+                # Go back to project directory selection
+                if ask_project_configuration; then
+                    detect_project_structure
+                    continue
+                else
+                    return 1
+                fi
+                ;;
+            *) 
+                print_message "warning" "Please choose 1, 2, 3, or 4"
+                continue ;;
+        esac
+    done
     
     # Quality thresholds
     echo ""
@@ -794,7 +822,7 @@ EOF
         install_makefile
     fi
     
-    # Install dependencies
+    # Install dependencies (compatible versions to avoid conflicts)
     print_message "info" "Installing JavaScript dependencies..."
     npm install --save-dev \
         eslint@^9.0.0 \
@@ -805,10 +833,14 @@ EOF
         dependency-cruiser@^16.0.0 \
         @typescript-eslint/eslint-plugin@^8.15.0 \
         @typescript-eslint/parser@^8.15.0 \
-        eslint-plugin-import@^2.30.0 \
+        eslint-plugin-import@^2.31.0 \
         eslint-plugin-security@^3.0.1 \
-        eslint-plugin-sonarjs@^2.0.4 \
-        typhonjs-escomplex-module@^0.1.0
+        husky@^9.0.0 \
+        lint-staged@^15.0.0 \
+        typhonjs-escomplex-module@^0.1.0 || {
+        print_message "warning" "Some dependencies may have peer dependency conflicts"
+        print_message "info" "This is normal with ESLint 9.x and older plugins"
+    }
     
     print_message "success" "JavaScript/TypeScript system installed"
     cd "$PROJECT_ROOT"
@@ -1032,7 +1064,25 @@ vulture>=2.10.0
 EOF
     
     print_message "info" "Installing Python dependencies..."
-    pip3 install -r requirements-adlimen.txt
+    
+    # Check if we're in a virtual environment or need user install
+    if [ -n "$VIRTUAL_ENV" ]; then
+        print_message "info" "Virtual environment detected, installing normally..."
+        pip3 install -r requirements-adlimen.txt
+    else
+        print_message "info" "Installing to user directory (no virtual environment)..."
+        pip3 install --user -r requirements-adlimen.txt || {
+            print_message "warning" "User install failed, trying with --break-system-packages..."
+            pip3 install --break-system-packages -r requirements-adlimen.txt || {
+                print_message "error" "Failed to install Python dependencies"
+                print_message "info" "Please create a virtual environment:"
+                echo "  python3 -m venv venv"
+                echo "  source venv/bin/activate"
+                echo "  pip install -r requirements-adlimen.txt"
+                return 1
+            }
+        }
+    fi
     
     print_message "success" "Python system installed"
     cd "$PROJECT_ROOT"
