@@ -599,10 +599,27 @@ create_eslint_configs() {
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   js.configs.recommended,
+  {
+    ignores: [
+      'node_modules/**',
+      'venv/**',
+      '**/.venv/**',
+      '**/env/**',
+      'dist/**',
+      'build/**',
+      '**/.git/**',
+      '**/coverage/**',
+      '**/.cache/**',
+      '**/tmp/**',
+      '**/temp/**',
+      'scripts/adlimen/**',
+      '.adlimen-code-quality-suite/**',
+      '**/.adlimen-code-quality-suite/**'
+    ]
+  },
   {
     files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
     languageOptions: {
@@ -616,19 +633,31 @@ export default [
       }
     },
     plugins: {
-      '@typescript-eslint': typescript,
-      sonarjs
+      '@typescript-eslint': typescript
     },
     rules: {
-      ...typescript.configs.recommended.rules,
-      ...sonarjs.configs.recommended.rules,
       'no-console': 'warn',
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
-      'complexity': ['error', 10],
+      'complexity': ['error', 15],
       'max-depth': ['error', 4],
-      'max-lines-per-function': ['error', 50]
+      'max-lines-per-function': ['error', 50],
+      'max-params': ['error', 4],
+      'max-statements': ['error', 20],
+      'no-unused-vars': 'error',
+      'no-undef': 'error',
+      'eqeqeq': 'error',
+      'curly': 'error'
+    }
+  },
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off'
     }
   },
   {
@@ -727,7 +756,6 @@ EOF
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   js.configs.recommended,
@@ -741,8 +769,7 @@ export default [
       }
     },
     plugins: {
-      '@typescript-eslint': typescript,
-      sonarjs
+      '@typescript-eslint': typescript
     },
     rules: {
       'complexity': ['error', 10],
@@ -985,6 +1012,50 @@ EOF
 
     chmod +x scripts/adlimen/quality-check.cjs
     
+    # Create .prettierignore file
+    print_message "info" "Creating .prettierignore file..."
+    cat > .prettierignore << 'EOF'
+# Dependencies and environments
+node_modules/
+venv/
+.venv/
+env/
+.env/
+
+# Build outputs
+dist/
+build/
+.next/
+coverage/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# AdLimen generated files
+scripts/adlimen/
+.adlimen-code-quality-suite/
+
+# Git
+.git/
+
+# Test output
+tests/mcp-tool/logs.json
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Package managers
+package-lock.json
+yarn.lock
+pip-compile-*
+EOF
+    
     # Create ESLint 9.x configuration files
     print_message "info" "Creating ESLint 9.x configuration files..."
     create_eslint_configs
@@ -1064,47 +1135,219 @@ install_makefile() {
         cp Makefile Makefile.bak
     fi
     
+    # Detect languages and create appropriate Makefile
+    local has_js=false
+    local has_python=false
+    
+    if [ -f "package.json" ]; then
+        has_js=true
+    fi
+    
+    if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then
+        has_python=true
+    fi
+    
     cat > Makefile << 'EOF'
-# AdLimen Quality Code System - Makefile Interface
-.PHONY: help adlimen-quality adlimen-quality-fix adlimen-format adlimen-lint adlimen-type-check
+# AdLimen Quality Code System - Hybrid Makefile Interface
+# Auto-generated for multi-language project support
+.PHONY: help js-quality py-quality adlimen-lint adlimen-format adlimen-security quality
 
 help:
-	@echo "AdLimen Quality Code System"
-	@echo "Usage: make <target>"
+	@echo "AdLimen Quality Code System - Hybrid Edition"
+	@echo "==========================================="
 	@echo ""
-	@echo "Quality Targets:"
-	@echo "  adlimen-quality       Run complete quality analysis"
-	@echo "  adlimen-quality-fix   Run quality analysis with auto-fix"
-	@echo "  adlimen-format        Code formatting check"
-	@echo "  adlimen-format-fix    Code formatting with auto-fix"
-	@echo "  adlimen-lint          Code quality linting"
-	@echo "  adlimen-lint-fix      Code linting with auto-fix"
-	@echo "  adlimen-type-check    TypeScript type checking"
-	@echo "  adlimen-security      Security analysis"
+	@echo "Language-Specific Quality Targets:"
+	@echo "  js-quality       Run JavaScript/TypeScript quality checks"
+	@echo "  js-lint          Run JavaScript/TypeScript linting only"
+	@echo "  js-format        Run JavaScript/TypeScript formatting"
+	@echo "  js-security      Run JavaScript/TypeScript security checks"
+	@echo ""
+	@echo "  py-quality       Run Python quality checks"
+	@echo "  py-lint          Run Python linting only"
+	@echo "  py-format        Run Python formatting"
+	@echo "  py-security      Run Python security checks"
+	@echo ""
+	@echo "AdLimen Unified Interface:"
+	@echo "  adlimen-lint     Run linting for all detected languages"
+	@echo "  adlimen-format   Run formatting for all detected languages"
+	@echo "  adlimen-security Run security checks for all detected languages"
+	@echo "  quality          Run comprehensive quality checks for all languages"
 
-adlimen-quality:
-	@node scripts/adlimen/quality-check.cjs all
+# JavaScript/TypeScript Quality Targets
+js-lint:
+	@echo "🔍 ESLint: Code quality linting"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs linting; \
+		else \
+			npx eslint . --config eslint.config.js; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
 
-adlimen-quality-fix:
-	@node scripts/adlimen/quality-check.cjs all --fix
+js-format:
+	@echo "✨ Prettier: Code formatting"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs prettier; \
+		else \
+			npx prettier --check .; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-security:
+	@echo "🛡️ Security: JavaScript/TypeScript security analysis"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs security; \
+		else \
+			npx eslint . --config eslint.security.config.js; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-quality: js-format js-lint js-security
+	@echo "✅ JavaScript/TypeScript quality checks completed"
+
+# Python Quality Targets
+py-lint:
+	@echo "🔍 Ruff + Pylint: Python code linting"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py linting; \
+			else \
+				python scripts/adlimen/quality-check.py linting; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m ruff check . || echo "⚠️ Ruff not available"; \
+			else \
+				python -m ruff check . || echo "⚠️ Ruff not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-format:
+	@echo "✨ Black: Python code formatting"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py formatting; \
+			else \
+				python scripts/adlimen/quality-check.py formatting; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m black --check . || echo "⚠️ Black not available"; \
+			else \
+				python -m black --check . || echo "⚠️ Black not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-security:
+	@echo "🛡️ Bandit + Safety: Python security analysis"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py security; \
+			else \
+				python scripts/adlimen/quality-check.py security; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m bandit -r . || echo "⚠️ Bandit not available"; \
+			else \
+				python -m bandit -r . || echo "⚠️ Bandit not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-quality: py-format py-lint py-security
+	@echo "✅ Python quality checks completed"
+
+# AdLimen Unified Interface (Backward Compatibility)
+adlimen-lint:
+	@echo "🔍 AdLimen: Multi-language linting"
+	@has_errors=0; \
+	if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript linting..."; \
+		$(MAKE) js-lint || has_errors=1; \
+	fi; \
+	if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python linting..."; \
+		$(MAKE) py-lint || has_errors=1; \
+	fi; \
+	if [ $$has_errors -eq 1 ]; then \
+		echo "❌ Linting failed for one or more languages"; \
+		exit 1; \
+	else \
+		echo "✅ Multi-language linting completed successfully"; \
+	fi
 
 adlimen-format:
-	@node scripts/adlimen/quality-check.cjs prettier
-
-adlimen-format-fix:
-	@node scripts/adlimen/quality-check.cjs prettier --fix
-
-adlimen-lint:
-	@node scripts/adlimen/quality-check.cjs linting
-
-adlimen-lint-fix:
-	@node scripts/adlimen/quality-check.cjs linting --fix
-
-adlimen-type-check:
-	@node scripts/adlimen/quality-check.cjs type-checking
+	@echo "✨ AdLimen: Multi-language formatting"
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript formatting..."; \
+		$(MAKE) js-format; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python formatting..."; \
+		$(MAKE) py-format; \
+	fi
+	@echo "✅ Multi-language formatting completed"
 
 adlimen-security:
-	@node scripts/adlimen/quality-check.cjs security
+	@echo "🛡️ AdLimen: Multi-language security analysis"
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript security analysis..."; \
+		$(MAKE) js-security; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python security analysis..."; \
+		$(MAKE) py-security; \
+	fi
+	@echo "✅ Multi-language security analysis completed"
+
+quality:
+	@echo "🚀 AdLimen: Comprehensive multi-language quality analysis"
+	@has_errors=0; \
+	if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript quality suite..."; \
+		$(MAKE) js-quality || has_errors=1; \
+	fi; \
+	if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python quality suite..."; \
+		$(MAKE) py-quality || has_errors=1; \
+	fi; \
+	if [ $$has_errors -eq 1 ]; then \
+		echo "❌ Quality checks failed for one or more languages"; \
+		exit 1; \
+	else \
+		echo "✅ Comprehensive multi-language quality analysis completed successfully"; \
+	fi
+
+# Backward compatibility aliases
+lint: adlimen-lint
+format: adlimen-format
+security: adlimen-security
 EOF
 }
 

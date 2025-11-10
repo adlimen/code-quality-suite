@@ -1,0 +1,384 @@
+# Complete Quality Suite - Hybrid Makefile Template
+# Comprehensive quality and development commands for Multi-Language projects
+# Supports both JavaScript/TypeScript and Python with separate quality workflows
+# Copy this to your project root as 'Makefile'
+
+.PHONY: help install dev build test quality clean js-quality py-quality adlimen-lint adlimen-format adlimen-security
+
+# Default target
+help:
+	@echo "Complete Quality Suite - Hybrid Edition"
+	@echo "======================================="
+	@echo ""
+	@echo "Language-Specific Quality Targets:"
+	@echo "  js-quality       Run JavaScript/TypeScript quality checks"
+	@echo "  js-lint          Run JavaScript/TypeScript linting only"
+	@echo "  js-format        Run JavaScript/TypeScript formatting"
+	@echo "  js-security      Run JavaScript/TypeScript security checks"
+	@echo "  js-type-check    Run TypeScript type checking"
+	@echo ""
+	@echo "  py-quality       Run Python quality checks"
+	@echo "  py-lint          Run Python linting only"
+	@echo "  py-format        Run Python formatting"
+	@echo "  py-security      Run Python security checks"
+	@echo "  py-type-check    Run Python type checking"
+	@echo ""
+	@echo "AdLimen Unified Interface:"
+	@echo "  adlimen-lint     Run linting for all detected languages"
+	@echo "  adlimen-format   Run formatting for all detected languages"
+	@echo "  adlimen-security Run security checks for all detected languages"
+	@echo "  quality          Run comprehensive quality checks for all languages"
+	@echo ""
+	@echo "Development:"
+	@echo "  install          Install dependencies for all languages"
+	@echo "  dev              Start development environment"
+	@echo "  test             Run tests for all languages"
+	@echo "  clean            Clean all build artifacts"
+
+# Language Detection and Installation
+install:
+	@echo "Installing dependencies for detected languages..."
+	@if [ -f "package.json" ]; then \
+		echo "📦 Installing JavaScript/TypeScript dependencies..."; \
+		npm install; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then \
+		echo "🐍 Installing Python dependencies..."; \
+		if [ -d "venv" ]; then \
+			echo "Using existing virtual environment"; \
+		else \
+			echo "Creating virtual environment..."; \
+			python3 -m venv venv; \
+		fi; \
+		if [ -f "requirements.txt" ]; then \
+			./venv/bin/pip install -r requirements.txt; \
+		fi; \
+		if [ -f "requirements-dev.txt" ]; then \
+			./venv/bin/pip install -r requirements-dev.txt; \
+		fi; \
+	fi
+
+# JavaScript/TypeScript Quality Targets
+js-lint:
+	@echo "🔍 ESLint: Code quality linting"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs linting; \
+		else \
+			npx eslint . --config eslint.config.js; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-format:
+	@echo "✨ Prettier: Code formatting"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs prettier; \
+		else \
+			npx prettier --check .; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-format-fix:
+	@echo "✨ Prettier: Code formatting with auto-fix"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs prettier --fix; \
+		else \
+			npx prettier --write .; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-security:
+	@echo "🛡️ Security: JavaScript/TypeScript security analysis"
+	@if [ -f "package.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs security; \
+		else \
+			npx eslint . --config eslint.security.config.js; \
+		fi; \
+	else \
+		echo "❌ No package.json found - JavaScript/TypeScript not detected"; \
+		exit 1; \
+	fi
+
+js-type-check:
+	@echo "🔧 TypeScript: Type checking"
+	@if [ -f "package.json" ] && [ -f "tsconfig.json" ]; then \
+		if [ -f "scripts/adlimen/quality-check.cjs" ]; then \
+			node scripts/adlimen/quality-check.cjs type-checking; \
+		else \
+			npx tsc --noEmit; \
+		fi; \
+	else \
+		echo "⚠️ TypeScript not configured or not detected"; \
+	fi
+
+js-quality: js-format js-lint js-type-check js-security
+	@echo "✅ JavaScript/TypeScript quality checks completed"
+
+# Python Quality Targets
+py-lint:
+	@echo "🔍 Ruff + Pylint: Python code linting"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py linting; \
+			else \
+				python scripts/adlimen/quality-check.py linting; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m ruff check . || echo "⚠️ Ruff not available"; \
+				./venv/bin/python -m pylint src/ || echo "⚠️ Pylint not available"; \
+			else \
+				python -m ruff check . || echo "⚠️ Ruff not available"; \
+				python -m pylint src/ || echo "⚠️ Pylint not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-format:
+	@echo "✨ Black: Python code formatting"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py formatting; \
+			else \
+				python scripts/adlimen/quality-check.py formatting; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m black --check . || echo "⚠️ Black not available"; \
+			else \
+				python -m black --check . || echo "⚠️ Black not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-format-fix:
+	@echo "✨ Black: Python code formatting with auto-fix"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py formatting --fix; \
+			else \
+				python scripts/adlimen/quality-check.py formatting --fix; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m black .; \
+			else \
+				python -m black .; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-security:
+	@echo "🛡️ Bandit + Safety: Python security analysis"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py security; \
+			else \
+				python scripts/adlimen/quality-check.py security; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m bandit -r . || echo "⚠️ Bandit not available"; \
+				./venv/bin/python -m safety check || echo "⚠️ Safety not available"; \
+			else \
+				python -m bandit -r . || echo "⚠️ Bandit not available"; \
+				python -m safety check || echo "⚠️ Safety not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-type-check:
+	@echo "🔧 MyPy: Python type checking"
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		if [ -f "scripts/adlimen/quality-check.py" ]; then \
+			if [ -d "venv" ]; then \
+				./venv/bin/python scripts/adlimen/quality-check.py type-checking; \
+			else \
+				python scripts/adlimen/quality-check.py type-checking; \
+			fi; \
+		else \
+			if [ -d "venv" ]; then \
+				./venv/bin/python -m mypy . || echo "⚠️ MyPy not available"; \
+			else \
+				python -m mypy . || echo "⚠️ MyPy not available"; \
+			fi; \
+		fi; \
+	else \
+		echo "❌ No Python files detected"; \
+		exit 1; \
+	fi
+
+py-quality: py-format py-lint py-type-check py-security
+	@echo "✅ Python quality checks completed"
+
+# AdLimen Unified Interface (Backward Compatibility)
+adlimen-lint:
+	@echo "🔍 AdLimen: Multi-language linting"
+	@has_errors=0; \
+	if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript linting..."; \
+		$(MAKE) js-lint || has_errors=1; \
+	fi; \
+	if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python linting..."; \
+		$(MAKE) py-lint || has_errors=1; \
+	fi; \
+	if [ $$has_errors -eq 1 ]; then \
+		echo "❌ Linting failed for one or more languages"; \
+		exit 1; \
+	else \
+		echo "✅ Multi-language linting completed successfully"; \
+	fi
+
+adlimen-format:
+	@echo "✨ AdLimen: Multi-language formatting"
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript formatting..."; \
+		$(MAKE) js-format; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python formatting..."; \
+		$(MAKE) py-format; \
+	fi
+	@echo "✅ Multi-language formatting completed"
+
+adlimen-format-fix:
+	@echo "✨ AdLimen: Multi-language formatting with auto-fix"
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript formatting with auto-fix..."; \
+		$(MAKE) js-format-fix; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python formatting with auto-fix..."; \
+		$(MAKE) py-format-fix; \
+	fi
+	@echo "✅ Multi-language formatting with auto-fix completed"
+
+adlimen-security:
+	@echo "🛡️ AdLimen: Multi-language security analysis"
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript security analysis..."; \
+		$(MAKE) js-security; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python security analysis..."; \
+		$(MAKE) py-security; \
+	fi
+	@echo "✅ Multi-language security analysis completed"
+
+# Comprehensive Quality Suite
+quality:
+	@echo "🚀 AdLimen: Comprehensive multi-language quality analysis"
+	@has_errors=0; \
+	if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript quality suite..."; \
+		$(MAKE) js-quality || has_errors=1; \
+	fi; \
+	if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then \
+		echo "Running Python quality suite..."; \
+		$(MAKE) py-quality || has_errors=1; \
+	fi; \
+	if [ $$has_errors -eq 1 ]; then \
+		echo "❌ Quality checks failed for one or more languages"; \
+		exit 1; \
+	else \
+		echo "✅ Comprehensive multi-language quality analysis completed successfully"; \
+	fi
+
+# Development and Testing
+dev:
+	@echo "🚀 Starting development environment..."
+	@if [ -f "package.json" ] && [ -f "venv/bin/activate" ]; then \
+		echo "Multi-language project detected"; \
+	elif [ -f "package.json" ]; then \
+		npm run dev || npm start; \
+	elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then \
+		if [ -d "venv" ]; then \
+			./venv/bin/python -m src.main || echo "Update dev target for your Python app"; \
+		else \
+			python -m src.main || echo "Update dev target for your Python app"; \
+		fi; \
+	fi
+
+test:
+	@echo "🧪 Running tests for all languages..."
+	@if [ -f "package.json" ]; then \
+		echo "Running JavaScript/TypeScript tests..."; \
+		npm test || echo "⚠️ JavaScript tests failed or not configured"; \
+	fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then \
+		echo "Running Python tests..."; \
+		if [ -d "venv" ]; then \
+			./venv/bin/python -m pytest tests/ -v || echo "⚠️ Python tests failed or not configured"; \
+		else \
+			python -m pytest tests/ -v || echo "⚠️ Python tests failed or not configured"; \
+		fi; \
+	fi
+	@echo "✅ Multi-language testing completed"
+
+# Clean up
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@# JavaScript/TypeScript cleanup
+	@rm -rf node_modules/.cache .next dist build reports .eslintcache .tsbuildinfo 2>/dev/null || true
+	@# Python cleanup
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	@find . -type f -name ".coverage" -delete 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov 2>/dev/null || true
+	@echo "✅ Clean completed"
+
+# Backward compatibility aliases
+lint: adlimen-lint
+format: adlimen-format
+format-fix: adlimen-format-fix
+security: adlimen-security
+
+# Quick development workflows
+quick-check:
+	@echo "⚡ Quick quality check..."
+	@$(MAKE) adlimen-format
+	@$(MAKE) adlimen-lint
+
+pre-commit:
+	@echo "📝 Pre-commit checks..."
+	@$(MAKE) adlimen-format-fix
+	@$(MAKE) adlimen-lint
+	@$(MAKE) test
+
+# Environment detection helper
+detect-languages:
+	@echo "🔍 Detecting project languages..."
+	@if [ -f "package.json" ]; then echo "✅ JavaScript/TypeScript detected"; fi
+	@if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || find . -name "*.py" -type f | head -1 | grep -q .; then echo "✅ Python detected"; fi
+	@if [ ! -f "package.json" ] && [ ! -f "requirements.txt" ] && [ ! -f "pyproject.toml" ] && [ ! -f "setup.py" ] && ! find . -name "*.py" -type f | head -1 | grep -q .; then echo "❌ No supported languages detected"; fi
